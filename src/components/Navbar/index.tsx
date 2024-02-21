@@ -7,6 +7,12 @@ import { RootState } from "../../store/store";
 import { useSelector } from "react-redux";
 import ThemeSelector from "../ThemeSelector";
 
+import Box from "@mui/material/Box";
+import Popper from "@mui/material/Popper";
+import Fade from "@mui/material/Fade";
+import { useWallet } from "@txnlab/use-wallet";
+import { Stack } from "@mui/material";
+
 const NavRoot = styled.nav`
   color: black;
   display: flex;
@@ -77,11 +83,36 @@ const ConnectButton = styled.svg`
 `;
 
 const Navbar = () => {
-  const navigate = useNavigate();
+  /* Wallet */
+
+  const { providers, activeAccount } = useWallet();
+
+  console.log({ providers, activeAccount });
+
+  /* Theme */
+
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+
+  /* Navigation */
+
+  const navigate = useNavigate();
   const [active, setActive] = React.useState("");
+
+  /* Popper */
+
+  const [open, setOpen] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+    setOpen((previousOpen) => !previousOpen);
+  };
+
+  const canBeOpen = open && Boolean(anchorEl);
+  const id = canBeOpen ? "transition-popper" : undefined;
+
   return (
     <NavRoot style={{ backgroundColor: isDarkTheme ? "#161717" : "#ffffff" }}>
       <NavContainer>
@@ -213,8 +244,8 @@ const Navbar = () => {
               </LgIconLink>
             </li>
           </ul>
-          {isDarkTheme ? (
-            <a href="#">
+          <div onClick={handleClick}>
+            {isDarkTheme ? (
               <svg
                 width="159"
                 height="50"
@@ -297,9 +328,7 @@ const Navbar = () => {
                   </filter>
                 </defs>
               </svg>
-            </a>
-          ) : (
-            <a href="#">
+            ) : (
               <svg
                 width="159"
                 height="50"
@@ -375,8 +404,43 @@ const Navbar = () => {
                   </filter>
                 </defs>
               </svg>
-            </a>
-          )}
+            )}
+          </div>
+          <Popper
+            id={id}
+            open={open}
+            anchorEl={anchorEl}
+            transition
+            placement="bottom-start"
+          >
+            {({ TransitionProps }) => (
+              <Fade {...TransitionProps} timeout={350}>
+                <Box
+                  sx={{
+                    width: "300px",
+                    border: 1,
+                    p: 1,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  {providers ? (
+                    <Stack spacing={2}>
+                      {providers.map((provider) => (
+                        <button
+                          onClick={() => {
+                            provider.connect();
+                            setOpen(false);
+                          }}
+                        >
+                          {provider.metadata.name}
+                        </button>
+                      ))}
+                    </Stack>
+                  ) : null}
+                </Box>
+              </Fade>
+            )}
+          </Popper>
         </div>
       </NavContainer>
     </NavRoot>

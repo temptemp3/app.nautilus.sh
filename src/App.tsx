@@ -41,9 +41,9 @@ const App: React.FC = () => {
   const providers = useInitializeProviders({
     providers: [
       { id: PROVIDER_ID.DEFLY, getDynamicClient: getDynamicDeflyWalletConnect },
-      { id: PROVIDER_ID.PERA, getDynamicClient: getDynamicPeraWalletConnect },
-      { id: PROVIDER_ID.DAFFI, getDynamicClient: getDynamicDaffiWalletConnect },
-      { id: PROVIDER_ID.EXODUS },
+      //{ id: PROVIDER_ID.PERA, getDynamicClient: getDynamicPeraWalletConnect },
+      //{ id: PROVIDER_ID.DAFFI, getDynamicClient: getDynamicDaffiWalletConnect },
+      //{ id: PROVIDER_ID.EXODUS },
       {
         id: PROVIDER_ID.LUTE,
         getDynamicClient: getDynamicLuteConnect,
@@ -67,7 +67,7 @@ const App: React.FC = () => {
     },
     {
       path: "/collection/:id/token/:tid",
-      Component: Page.Token
+      Component: Page.Token,
     },
     {
       path: "/sandbox",
