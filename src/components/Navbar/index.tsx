@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import LightLogo from "static/logo-light.svg";
 import DarkLogo from "static/logo-dark.svg";
 import { RootState } from "../../store/store";
@@ -85,7 +85,9 @@ const Navbar = () => {
   return (
     <NavRoot style={{ backgroundColor: isDarkTheme ? "#161717" : "#ffffff" }}>
       <NavContainer>
-        <NavLogo src={isDarkTheme ? DarkLogo : LightLogo} />
+        <Link to="/">
+          <NavLogo src={isDarkTheme ? DarkLogo : LightLogo} />
+        </Link>
         <div
           style={{
             display: "flex",
@@ -97,7 +99,7 @@ const Navbar = () => {
             {[
               {
                 label: "Collection",
-                href: "/collections",
+                href: "/collection",
               },
               {
                 label: "Auction",
