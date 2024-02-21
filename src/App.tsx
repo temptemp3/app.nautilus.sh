@@ -58,6 +58,18 @@ const App: React.FC = () => {
       Component: Page.Home,
     },
     {
+      path: "/collection",
+      Component: Page.Collections,
+    },
+    {
+      path: "/collection/:id",
+      Component: Page.Collection,
+    },
+    {
+      path: "/collection/:id/token/:tid",
+      Component: Page.Token
+    },
+    {
       path: "/sandbox",
       Component: Page.Sandbox,
     },
@@ -72,12 +84,10 @@ const App: React.FC = () => {
               <Route path={el.path} Component={el.Component} />
             ))}
             <Route path="/" Component={Page.Home} />
+            <Route path="/collection" Component={Page.Collections} />
             <Route path="/sandbox" Component={Page.Sandbox} />
           </Routes>
         </Router>
-        <footer>
-          asdf
-        </footer>
       </Provider>
     </WalletProvider>
   );

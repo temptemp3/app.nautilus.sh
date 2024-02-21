@@ -1,11 +1,13 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import styled from "styled-components";
+import { RootState } from "../../store/store";
 
 const ListRoot = styled.div`
+  padding-top: 64px;
   display: flex;
   gap: 32px;
   flex-direction: column;
-  margin-top: 64px;
 `;
 
 const Heading = styled.h3`
@@ -29,9 +31,18 @@ interface ListProps {
 }
 
 export const List: React.FC<ListProps> = ({ title, children }) => {
+  const isDarkTheme = useSelector(
+    (state: RootState) => state.theme.isDarkTheme
+  );
   return (
     <ListRoot>
-      <Heading>{title}</Heading>
+      <Heading
+        style={{
+          color: isDarkTheme ? "white" : undefined,
+        }}
+      >
+        {title}
+      </Heading>
       <Container>{children}</Container>
     </ListRoot>
   );
