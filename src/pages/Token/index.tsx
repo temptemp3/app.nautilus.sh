@@ -4,8 +4,10 @@ import {
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Container,
   Grid,
+  LinearProgress,
   Stack,
   Tab,
   Tabs,
@@ -188,8 +190,12 @@ export const Token: React.FC = () => {
 
   /* Transaction */
 
+  const [isTransferring, setIsTransferring] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
   const handleTransfer = async (addr: string) => {
     try {
+      setProgress(25);
+      setIsTransferring(true);
       const contractId = Number(id);
       const tokenId = Number(tid);
       const { algodClient, indexerClient } = getAlgorandClients();
@@ -214,9 +220,11 @@ export const Token: React.FC = () => {
         throw new Error("arc72_transferFrom failed in simulate");
       }
       const txns = arc72_transferFromR.txns;
+      setProgress(50);
       const res = await signTransactions(
         txns.map((txn) => new Uint8Array(Buffer.from(txn, "base64")))
       ).then(sendTransactions);
+      setProgress(75);
       toast.success(`NFT Transfer successful!`);
       const [nft] = nfts;
       setNfts([
@@ -225,8 +233,13 @@ export const Token: React.FC = () => {
           owner: addr,
         },
       ]);
+      setProgress(100);
     } catch (e) {
       toast.error("Failed to send transaction");
+    } finally {
+      setIsTransferring(false);
+      setOpen(false);
+      setProgress(0);
     }
   };
 
@@ -377,7 +390,30 @@ export const Token: React.FC = () => {
                         >
                           {el.owner.slice(0, 4)}...{el.owner.slice(-4)}
                         </span>
+                        {el.owner === activeAccount?.address &&
+                        !isTransferring ? (
+                          <Button
+                            onClick={() => {
+                              setOpen(true);
+                            }}
+                          >
+                            Send
+                            <SendIcon sx={{ ml: 1 }} fontSize="small" />
+                          </Button>
+                        ) : null}
                       </AvatarWithName>
+                      {isTransferring ? (
+                        <div>
+                          <Typography color="primary" variant="h6">
+                            Transferring ownership
+                          </Typography>
+                          <LinearProgress
+                            variant="buffer"
+                            value={50}
+                            valueBuffer={0}
+                          />
+                        </div>
+                      ) : null}
                       <PriceDisplay gap={0.5}>
                         <div className="price-label">Price</div>
                         <div
@@ -396,16 +432,6 @@ export const Token: React.FC = () => {
                       >
                         <BuyButton src={ButtonBuy} alt="Buy Button" />
                         <OfferButton src={ButtonOffer} alt="Offer Button" />
-                        {el.owner === activeAccount?.address ? (
-                          <Button
-                            onClick={() => {
-                              setOpen(true);
-                            }}
-                          >
-                            Send
-                            <SendIcon sx={{ ml: 1 }} fontSize="large" />
-                          </Button>
-                        ) : null}
                       </Stack>
                       <AuctionContainer direction="row">
                         <div className="auction-left">
