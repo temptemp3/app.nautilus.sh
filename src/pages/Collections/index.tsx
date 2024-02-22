@@ -45,7 +45,7 @@ export const Collections: React.FC = () => {
     <Layout>
       <Container maxWidth="xl">
         <Section title={`Collections ${collections.length}`}>
-          <Grid container spacing={0}>
+          <Grid container spacing={2}>
             {collections.reverse().map((el: any, i: number) => {
               return (
                 <Grid

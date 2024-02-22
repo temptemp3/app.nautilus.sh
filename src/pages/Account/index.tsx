@@ -141,7 +141,7 @@ export const Account: React.FC = () => {
         <Typography variant="h4" sx={{ my: 5 }}>
           Collected <small>{nfts.length}</small>
         </Typography>
-        <Grid container spacing={0}>
+        <Grid container spacing={2}>
           {nfts.map((nft: any) => {
             return (
               <Grid item xs={6} sm={4} md={3} lg={2} key={nft.id}>

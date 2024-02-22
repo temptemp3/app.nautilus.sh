@@ -3,6 +3,7 @@ import Layout from "../../layouts/Default";
 import {
   Avatar,
   Box,
+  Button,
   Container,
   Grid,
   Stack,
@@ -25,6 +26,9 @@ import { stringToColorCode } from "../../utils/string";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
 import algosdk from "algosdk";
+
+import SendIcon from "@mui/icons-material/Send";
+import { useWallet } from "@txnlab/use-wallet";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -165,6 +169,10 @@ const MoreFrom = styled.h3`
 `;
 
 export const Token: React.FC = () => {
+  /* Wallet */
+
+  const { activeAccount } = useWallet();
+
   /* Copy to clipboard */
 
   const [copiedText, copy] = useCopyToClipboard();
@@ -324,9 +332,22 @@ export const Token: React.FC = () => {
                           1,000 VOI
                         </div>
                       </PriceDisplay>
-                      <Stack direction="row" gap={2}>
+                      <Stack
+                        direction="row"
+                        gap={2}
+                        sx={{ alignItems: "center" }}
+                      >
                         <BuyButton src={ButtonBuy} alt="Buy Button" />
                         <OfferButton src={ButtonOffer} alt="Offer Button" />
+                        {el.owner === activeAccount?.address ? (
+                          <Button>
+                            Send &nbsp;
+                            <SendIcon
+                              fontSize="large"
+                              sx={{ transform: "rotate(-15deg)" }}
+                            />
+                          </Button>
+                        ) : null}
                       </Stack>
                       <AuctionContainer direction="row">
                         <div className="auction-left">

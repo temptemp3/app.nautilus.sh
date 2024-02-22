@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LightLogo from "static/logo-light.svg";
 import DarkLogo from "static/logo-dark.svg";
@@ -18,6 +18,7 @@ import { toast } from "react-toastify";
 
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 
 const NavRoot = styled.nav`
   color: black;
@@ -106,9 +107,18 @@ const Navbar = () => {
 
   /* Wallet */
 
-  const { providers, activeAccount, connectedAccounts } = useWallet();
+  const { providers, activeAccount, connectedAccounts, getAccountInfo } =
+    useWallet();
 
-  console.log({ providers, activeAccount, connectedAccounts });
+  const [accInfo, setAccInfo] = React.useState<any>(null);
+
+  console.log({ providers, activeAccount, connectedAccounts, accInfo });
+
+  useEffect(() => {
+    if (activeAccount) {
+      getAccountInfo().then(setAccInfo);
+    }
+  }, [activeAccount]);
 
   /* Theme */
 
@@ -206,7 +216,7 @@ const Navbar = () => {
             }}
           >
             {/* magnifying glass */}
-            <li style={{ color: isDarkTheme ? "#717579" : undefined }}>
+            {/*<li style={{ color: isDarkTheme ? "#717579" : undefined }}>
               <LgIconLink>
                 <svg
                   width="24"
@@ -224,30 +234,34 @@ const Navbar = () => {
                   />
                 </svg>
               </LgIconLink>
-            </li>
+          </li>*/}
             {/* moon icon */}
             <li style={{ color: isDarkTheme ? "#717579" : undefined }}>
               <ThemeSelector>
-                <LgIconLink>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M22 15.8442C20.6866 16.4382 19.2286 16.7688 17.6935 16.7688C11.9153 16.7688 7.23116 12.0847 7.23116 6.30654C7.23116 4.77135 7.5618 3.3134 8.15577 2C4.52576 3.64163 2 7.2947 2 11.5377C2 17.3159 6.68414 22 12.4623 22C16.7053 22 20.3584 19.4742 22 15.8442Z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </LgIconLink>
+                {isDarkTheme ? (
+                  <WbSunnyOutlinedIcon />
+                ) : (
+                  <LgIconLink>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M22 15.8442C20.6866 16.4382 19.2286 16.7688 17.6935 16.7688C11.9153 16.7688 7.23116 12.0847 7.23116 6.30654C7.23116 4.77135 7.5618 3.3134 8.15577 2C4.52576 3.64163 2 7.2947 2 11.5377C2 17.3159 6.68414 22 12.4623 22C16.7053 22 20.3584 19.4742 22 15.8442Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </LgIconLink>
+                )}
               </ThemeSelector>
             </li>
-            <li style={{ color: isDarkTheme ? "#717579" : undefined }}>
+            {/*<li style={{ color: isDarkTheme ? "#717579" : undefined }}>
               <LgIconLink>
                 <svg
                   width="24"
@@ -265,7 +279,7 @@ const Navbar = () => {
                   />
                 </svg>
               </LgIconLink>
-            </li>
+        </li>*/}
           </ul>
           {activeAccount ? (
             <AccountCircleOutlinedIcon
@@ -445,18 +459,53 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            <div
-              onClick={handleClick}
-              style={{
-                cursor: "pointer",
-              }}
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{ alignItems: "flex-start" }}
             >
-              <AccountBalanceWalletOutlinedIcon
-                sx={{
-                  color: isDarkTheme ? "#717579" : undefined,
+              {accInfo ? (
+                <>
+                  <div
+                    style={{
+                      color: isDarkTheme ? "#717579" : undefined,
+                    }}
+                  >
+                    {(
+                      (accInfo.amount - accInfo["min-balance"]) /
+                      1e6
+                    ).toLocaleString()}{" "}
+                    VOI
+                  </div>
+                  <Divider
+                    orientation="vertical"
+                    flexItem
+                    sx={{
+                      backgroundColor: isDarkTheme ? "#717579" : undefined,
+                    }}
+                  />
+                  <div
+                    style={{
+                      color: isDarkTheme ? "#717579" : undefined,
+                    }}
+                  >
+                    {activeAccount.address.slice(0, 4)}
+                  </div>
+                </>
+              ) : null}
+              <div
+                onClick={handleClick}
+                style={{
+                  cursor: "pointer",
                 }}
-              />
-            </div>
+              >
+                <AccountBalanceWalletOutlinedIcon
+                  sx={{
+                    color: isDarkTheme ? "#717579" : undefined,
+                  }}
+                />
+              </div>
+            </Stack>
           )}
           <Popper
             id={id}
