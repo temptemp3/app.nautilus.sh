@@ -13,6 +13,7 @@ import ThemeSelector from "./components/ThemeSelector";
 import * as Page from "./pages";
 import Navbar from "./components/Navbar";
 import Layout from "./layouts/Default";
+import algosdk from "algosdk";
 
 const getDynamicDeflyWalletConnect = async () => {
   const DeflyWalletConnect = (await import("@blockshake/defly-connect"))
@@ -20,17 +21,17 @@ const getDynamicDeflyWalletConnect = async () => {
   return DeflyWalletConnect;
 };
 
-const getDynamicPeraWalletConnect = async () => {
-  const PeraWalletConnect = (await import("@perawallet/connect"))
-    .PeraWalletConnect;
-  return PeraWalletConnect;
-};
+// const getDynamicPeraWalletConnect = async () => {
+//   const PeraWalletConnect = (await import("@perawallet/connect"))
+//     .PeraWalletConnect;
+//   return PeraWalletConnect;
+// };
 
-const getDynamicDaffiWalletConnect = async () => {
-  const DaffiWalletConnect = (await import("@daffiwallet/connect"))
-    .DaffiWalletConnect;
-  return DaffiWalletConnect;
-};
+// const getDynamicDaffiWalletConnect = async () => {
+//   const DaffiWalletConnect = (await import("@daffiwallet/connect"))
+//     .DaffiWalletConnect;
+//   return DaffiWalletConnect;
+// };
 
 const getDynamicLuteConnect = async () => {
   const LuteConnect = (await import("lute-connect")).default;
@@ -51,6 +52,14 @@ const App: React.FC = () => {
       },
       { id: PROVIDER_ID.KIBISIS },
     ],
+    nodeConfig: {
+      network: "voi-testnet",
+      nodeServer: "https://testnet-api.voi.nodly.io",
+      nodeToken: "",
+      nodePort: "443",
+    },
+    algosdkStatic: algosdk,
+    debug: true,
   });
   const routes = [
     {

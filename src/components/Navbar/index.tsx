@@ -85,9 +85,9 @@ const ConnectButton = styled.svg`
 const Navbar = () => {
   /* Wallet */
 
-  const { providers, activeAccount } = useWallet();
+  const { providers, activeAccount, connectedAccounts } = useWallet();
 
-  console.log({ providers, activeAccount });
+  console.log({ providers, activeAccount, connectedAccounts });
 
   /* Theme */
 
@@ -426,14 +426,73 @@ const Navbar = () => {
                   {providers ? (
                     <Stack spacing={2}>
                       {providers.map((provider) => (
-                        <button
-                          onClick={() => {
-                            provider.connect();
-                            setOpen(false);
-                          }}
-                        >
-                          {provider.metadata.name}
-                        </button>
+                        <Stack spacing={2}>
+                          {!connectedAccounts
+                            .map(({ providerId }) => providerId)
+                            .includes(provider.metadata.id) ? (
+                            <button
+                              onClick={() => {
+                                provider.connect();
+                                setOpen(false);
+                              }}
+                            >
+                              {provider.metadata.name}
+                            </button>
+                          ) : (
+                            <Stack
+                              spacing={2}
+                              direction="row"
+                              style={{ justifyContent: "space-between" }}
+                            >
+                              <u>{provider.metadata.name}</u>
+                              <button
+                                onClick={() => {
+                                  provider.disconnect();
+                                }}
+                              >
+                                Disconnect
+                              </button>
+                            </Stack>
+                          )}
+                          {connectedAccounts
+                            ?.filter(
+                              (account) =>
+                                account?.providerId === provider.metadata.id
+                            )
+                            ?.map((account) => {
+                              const isAccountActive =
+                                activeAccount?.providerId ===
+                                  provider.metadata.id &&
+                                activeAccount?.address === account?.address;
+                              return (
+                                <Stack spacing={2} direction="row">
+                                  <span
+                                    style={{
+                                      fontWeight: isAccountActive
+                                        ? "bold"
+                                        : "normal",
+                                    }}
+                                  >
+                                    {account?.address?.slice(0, 4)}
+                                  </span>
+                                  {!isAccountActive ? (
+                                    <button
+                                      onClick={() => {
+                                        provider.setActiveProvider();
+                                        provider.setActiveAccount(
+                                          account?.address
+                                        );
+                                      }}
+                                    >
+                                      Set Active
+                                    </button>
+                                  ) : (
+                                    <em>Active</em>
+                                  )}
+                                </Stack>
+                              );
+                            })}
+                        </Stack>
                       ))}
                     </Stack>
                   ) : null}
