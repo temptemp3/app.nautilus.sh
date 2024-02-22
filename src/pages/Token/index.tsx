@@ -25,10 +25,14 @@ import { stringToColorCode } from "../../utils/string";
 
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
-import algosdk from "algosdk";
 
 import SendIcon from "@mui/icons-material/Send";
 import { useWallet } from "@txnlab/use-wallet";
+import AddressModal from "../../components/modals/AddressModal";
+import { getAlgorandClients } from "../../wallets";
+
+import algosdk from "algosdk";
+import { arc72 } from "ulujs";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -169,9 +173,62 @@ const MoreFrom = styled.h3`
 `;
 
 export const Token: React.FC = () => {
+  /* Send Modal */
+
+  const [open, setOpen] = React.useState(false);
+
   /* Wallet */
 
-  const { activeAccount } = useWallet();
+  const { activeAccount, signTransactions, sendTransactions } = useWallet();
+
+  /* Router */
+
+  const { id, tid } = useParams();
+  const navigate = useNavigate();
+
+  /* Transaction */
+
+  const handleTransfer = async (addr: string) => {
+    try {
+      const contractId = Number(id);
+      const tokenId = Number(tid);
+      const { algodClient, indexerClient } = getAlgorandClients();
+      const ci = new arc72(contractId, algodClient, indexerClient, {
+        acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
+      });
+      const arc72_ownerOfR = await ci.arc72_ownerOf(Number(tid));
+      if (!arc72_ownerOfR.success) {
+        throw new Error("arc72_ownerOf failed in simulate");
+      }
+      if (arc72_ownerOfR.returnValue !== activeAccount?.address) {
+        throw new Error("arc72_ownerOf returned wrong owner");
+      }
+      const arc72_transferFromR = await ci.arc72_transferFrom(
+        activeAccount?.address || "",
+        addr,
+        BigInt(tokenId),
+        true,
+        false
+      );
+      if (!arc72_transferFromR.success) {
+        throw new Error("arc72_transferFrom failed in simulate");
+      }
+      const txns = arc72_transferFromR.txns;
+      const res = await signTransactions(
+        txns.map((txn) => new Uint8Array(Buffer.from(txn, "base64")))
+      ).then(sendTransactions);
+      toast.success(`NFT Transfer successful!`);
+      const [nft] = nfts;
+      setNfts([
+        {
+          ...nft,
+          owner: addr,
+        },
+      ]);
+    } catch (e) {
+      toast.error("Failed to send transaction");
+    }
+  };
 
   /* Copy to clipboard */
 
@@ -188,8 +245,8 @@ export const Token: React.FC = () => {
       });
   };
 
-  const { id, tid } = useParams();
-  const navigate = useNavigate();
+  /* Theme */
+
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
@@ -340,12 +397,13 @@ export const Token: React.FC = () => {
                         <BuyButton src={ButtonBuy} alt="Buy Button" />
                         <OfferButton src={ButtonOffer} alt="Offer Button" />
                         {el.owner === activeAccount?.address ? (
-                          <Button>
-                            Send &nbsp;
-                            <SendIcon
-                              fontSize="large"
-                              sx={{ transform: "rotate(-15deg)" }}
-                            />
+                          <Button
+                            onClick={() => {
+                              setOpen(true);
+                            }}
+                          >
+                            Send
+                            <SendIcon sx={{ ml: 1 }} fontSize="large" />
                           </Button>
                         ) : null}
                       </Stack>
@@ -445,6 +503,12 @@ export const Token: React.FC = () => {
             </Grid>*/}
         </Container>
       ) : null}
+      <AddressModal
+        title="Enter address to send NFT"
+        open={open}
+        handleClose={() => setOpen(false)}
+        onSave={handleTransfer}
+      />
     </Layout>
   );
 };
