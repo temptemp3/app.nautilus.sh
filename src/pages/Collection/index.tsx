@@ -1,7 +1,6 @@
 import React from "react";
 import Layout from "../../layouts/Default";
 import { Grid } from "@mui/material";
-import NFTCard from "../../components/NFTCard";
 import Section from "../../components/Section";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -41,20 +40,19 @@ export const Collection: React.FC = () => {
     <Layout>
       {nfts.length > 0 ? (
         <Section title={nfts[0].metadata.name.replace(/[#0123456789 ]*$/, "")}>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {nfts.map((el: any) => {
               return (
-                <Grid item>
-                  <NFTCard
-                    nftName={el.metadata.name}
-                    image={el.metadata.image}
-                    price="123,000 VOI"
-                    owner={el.owner}
-                    onClick={() => {
+                <Grid item xs={6} sm={4} md={3} lg={2}>
+                  <img
+                    style={{ width: "100%", cursor: "pointer" }}
+                    src={el.metadata.image}
+                    alt={el.metadata.name}
+                    onClick={() =>
                       navigate(
                         `/collection/${el.contractId}/token/${el.tokenId}`
-                      );
-                    }}
+                      )
+                    }
                   />
                 </Grid>
               );

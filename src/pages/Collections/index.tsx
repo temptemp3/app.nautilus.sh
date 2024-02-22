@@ -1,6 +1,6 @@
 import React from "react";
 import Layout from "../../layouts/Default";
-import { Grid } from "@mui/material";
+import { Container, Grid, Typography } from "@mui/material";
 import NFTCard from "../../components/NFTCard";
 import Section from "../../components/Section";
 import { nfts } from "../../static/json/nfts";
@@ -43,25 +43,38 @@ export const Collections: React.FC = () => {
   console.log({ collections });
   return (
     <Layout>
-      <Section title="Collections">
-        <Grid container spacing={3}>
-          {collections.map((el: any) => {
-            return (
-              <Grid item>
-                <NFTCard
-                  nftName={el.metadata.name.replace(/[#123456789 ]*$/, "")}
-                  image={el.metadata.image}
-                  price="123,000 VOI"
-                  owner={""}
-                  onClick={() => {
-                    navigate(`/collection/${el.contractId}`);
-                  }}
-                />
-              </Grid>
-            );
-          })}
-        </Grid>
-      </Section>
+      <Container maxWidth="xl">
+        <Section title={`Collections ${collections.length}`}>
+          <Grid container spacing={0}>
+            {collections.reverse().map((el: any, i: number) => {
+              return (
+                <Grid
+                  key={i}
+                  item
+                  xs={6}
+                  sm={4}
+                  md={3}
+                  lg={2}
+                  sx={{ overflow: "hidden" }}
+                >
+                  <img
+                    style={{
+                      width: "100%",
+                      objectFit: "cover",
+                      cursor: "pointer",
+                    }}
+                    src={el.metadata.image}
+                    alt={el.metadata.name}
+                    onClick={() => {
+                      navigate(`/collection/${el.contractId}`);
+                    }}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Section>
+      </Container>
     </Layout>
   );
 };

@@ -1,6 +1,15 @@
 import React from "react";
 import Layout from "../../layouts/Default";
-import { Avatar, Box, Grid, Stack, Tab, Tabs, Typography } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Container,
+  Grid,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
+} from "@mui/material";
 import NFTCard from "../../components/NFTCard";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -11,6 +20,11 @@ import IconAlarm from "static/icon-alarm.svg";
 import ButtonBuy from "static/button-buy.svg";
 import ButtonOffer from "static/button-offer.svg";
 import ButtonBid from "static/button-bid.svg";
+import { stringToColorCode } from "../../utils/string";
+
+import { useCopyToClipboard } from "usehooks-ts";
+import { toast } from "react-toastify";
+import algosdk from "algosdk";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -51,6 +65,9 @@ const AvatarWithName = styled(Stack)`
   dsplay: flex;
   align-items: center;
   color: #68727d;
+  & .owner-name {
+    cursor: pointer;
+  }
 `;
 
 const NFTName = styled.div`
@@ -148,6 +165,21 @@ const MoreFrom = styled.h3`
 `;
 
 export const Token: React.FC = () => {
+  /* Copy to clipboard */
+
+  const [copiedText, copy] = useCopyToClipboard();
+
+  const handleCopy = (text: string) => () => {
+    copy(text)
+      .then(() => {
+        console.log("Copied!", { text });
+        toast.success("Copied to clipboard!");
+      })
+      .catch((error) => {
+        toast.error("Failed to copy to clipboard!");
+      });
+  };
+
   const { id, tid } = useParams();
   const navigate = useNavigate();
   const isDarkTheme = useSelector(
@@ -210,7 +242,7 @@ export const Token: React.FC = () => {
   return (
     <Layout>
       {nfts.length > 0 ? (
-        <>
+        <Container>
           <Grid
             sx={{
               padding: "48px",
@@ -224,7 +256,7 @@ export const Token: React.FC = () => {
             {nfts.map((el: any) => {
               return (
                 <>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} md={6}>
                     <img
                       src={el.metadata.image}
                       style={{ width: "100%", borderRadius: "25px" }}
@@ -232,22 +264,55 @@ export const Token: React.FC = () => {
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Stack gap={2}>
-                      <AvatarWithName direction="row" gap={1}>
-                        <Avatar
-                          sx={{
-                            height: "24px",
-                            width: "24px",
-                          }}
-                        >
-                          H
-                        </Avatar>
-                        <span className="owner-name">Harold</span>
-                      </AvatarWithName>
+                      {((addr) => (
+                        <AvatarWithName direction="row" gap={1}>
+                          <Avatar
+                            sx={{
+                              height: "24px",
+                              width: "24px",
+                              background: `linear-gradient(45deg, ${stringToColorCode(
+                                addr
+                              )}, ${isDarkTheme ? "#000" : "#fff"})`,
+                            }}
+                          >
+                            {addr.slice(0, 1)}
+                          </Avatar>
+                          <span
+                            className="owner-name"
+                            onClick={() => {
+                              navigate(`/collection/${el.contractId}`);
+                            }}
+                          >
+                            {el.metadata.name.replace(/[#0123456789 ]*$/, "")}
+                          </span>
+                        </AvatarWithName>
+                      ))(algosdk.getApplicationAddress(el.contractId))}
                       <NFTName
                         style={{ color: isDarkTheme ? "#FFFFFF" : undefined }}
                       >
                         {el.metadata.name}
                       </NFTName>
+                      <AvatarWithName direction="row" gap={1}>
+                        <Avatar
+                          sx={{
+                            height: "24px",
+                            width: "24px",
+                            background: `linear-gradient(45deg, ${stringToColorCode(
+                              el.owner
+                            )}, ${isDarkTheme ? "#000" : "#fff"})`,
+                          }}
+                        >
+                          {el.owner.slice(0, 1)}
+                        </Avatar>
+                        <span
+                          className="owner-name"
+                          onClick={() => {
+                            navigate(`/account/${el.owner}`);
+                          }}
+                        >
+                          {el.owner.slice(0, 4)}...{el.owner.slice(-4)}
+                        </span>
+                      </AvatarWithName>
                       <PriceDisplay gap={0.5}>
                         <div className="price-label">Price</div>
                         <div
@@ -330,7 +395,7 @@ export const Token: React.FC = () => {
               </CustomTabPanel>
             </Box>
           </Grid>
-          <Grid item xs={12}>
+          {/*<Grid item xs={12}>
             <MoreFrom style={{ color: isDarkTheme ? "#FFFFFF" : undefined }}>
               {`More from ${nfts[0].metadata.name.replace(
                 /[#0123456789 ]*$/,
@@ -356,8 +421,8 @@ export const Token: React.FC = () => {
                 );
               })}
             </Grid>
-          </Grid>
-        </>
+            </Grid>*/}
+        </Container>
       ) : null}
     </Layout>
   );
