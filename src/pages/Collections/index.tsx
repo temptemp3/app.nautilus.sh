@@ -29,6 +29,8 @@ export const Collections: React.FC = () => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+
+  /* NFT Navigator */
   const [collections, setCollections] = React.useState<any>([]);
   React.useEffect(() => {
     try {
@@ -77,6 +79,7 @@ export const Collections: React.FC = () => {
                       width: "100%",
                       objectFit: "cover",
                       cursor: "pointer",
+                      borderRadius: 10,
                     }}
                     src={el.metadata.image}
                     alt={el.metadata.name}

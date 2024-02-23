@@ -63,7 +63,11 @@ export const Collection: React.FC = () => {
                 return (
                   <Grid item xs={6} sm={4} md={3} lg={2}>
                     <img
-                      style={{ width: "100%", cursor: "pointer" }}
+                      style={{
+                        width: "100%",
+                        cursor: "pointer",
+                        borderRadius: 10,
+                      }}
                       src={el.metadata.image}
                       alt={el.metadata.name}
                       onClick={() =>

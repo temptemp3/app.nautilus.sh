@@ -1,19 +1,6 @@
 import React from "react";
 import Layout from "../../layouts/Default";
-import {
-  Avatar,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Grid,
-  LinearProgress,
-  Stack,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
-import NFTCard from "../../components/NFTCard";
+import { Avatar, Container, Grid, Stack, Typography } from "@mui/material";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -28,13 +15,9 @@ import { stringToColorCode } from "../../utils/string";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
 
-import SendIcon from "@mui/icons-material/Send";
 import { useWallet } from "@txnlab/use-wallet";
-import AddressModal from "../../components/modals/AddressModal";
-import { getAlgorandClients } from "../../wallets";
 
 import algosdk from "algosdk";
-import { arc72 } from "ulujs";
 
 const StyledLink = styled(Link)`
   text-decoration: none;
@@ -43,41 +26,6 @@ const StyledLink = styled(Link)`
   align-items: center;
   gap: 10px;
 `;
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabLabel = styled(Typography)`
-  font-family: Nohemi;
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0em;
-  text-align: center;
-`;
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          <TabLabel>{children}</TabLabel>
-        </Box>
-      )}
-    </div>
-  );
-}
 
 const AvatarWithName = styled(Stack)`
   dsplay: flex;
@@ -183,10 +131,6 @@ const MoreFrom = styled.h3`
 `;
 
 export const Token: React.FC = () => {
-  /* Send Modal */
-
-  const [open, setOpen] = React.useState(false);
-
   /* Wallet */
 
   const { activeAccount, signTransactions, sendTransactions } = useWallet();
@@ -195,61 +139,6 @@ export const Token: React.FC = () => {
 
   const { id, tid } = useParams();
   const navigate = useNavigate();
-
-  /* Transaction */
-
-  const [isTransferring, setIsTransferring] = React.useState(false);
-  const [progress, setProgress] = React.useState(0);
-  const handleTransfer = async (addr: string) => {
-    try {
-      setProgress(25);
-      setIsTransferring(true);
-      const contractId = Number(id);
-      const tokenId = Number(tid);
-      const { algodClient, indexerClient } = getAlgorandClients();
-      const ci = new arc72(contractId, algodClient, indexerClient, {
-        acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
-      });
-      const arc72_ownerOfR = await ci.arc72_ownerOf(Number(tid));
-      if (!arc72_ownerOfR.success) {
-        throw new Error("arc72_ownerOf failed in simulate");
-      }
-      if (arc72_ownerOfR.returnValue !== activeAccount?.address) {
-        throw new Error("arc72_ownerOf returned wrong owner");
-      }
-      const arc72_transferFromR = await ci.arc72_transferFrom(
-        activeAccount?.address || "",
-        addr,
-        BigInt(tokenId),
-        true,
-        false
-      );
-      if (!arc72_transferFromR.success) {
-        throw new Error("arc72_transferFrom failed in simulate");
-      }
-      const txns = arc72_transferFromR.txns;
-      setProgress(50);
-      const res = await signTransactions(
-        txns.map((txn) => new Uint8Array(Buffer.from(txn, "base64")))
-      ).then(sendTransactions);
-      setProgress(75);
-      toast.success(`NFT Transfer successful!`);
-      const [nft] = nfts;
-      setNfts([
-        {
-          ...nft,
-          owner: addr,
-        },
-      ]);
-      setProgress(100);
-    } catch (e) {
-      toast.error("Failed to send transaction");
-    } finally {
-      setIsTransferring(false);
-      setOpen(false);
-      setProgress(0);
-    }
-  };
 
   /* Copy to clipboard */
 
@@ -398,30 +287,7 @@ export const Token: React.FC = () => {
                         >
                           {el.owner.slice(0, 4)}...{el.owner.slice(-4)}
                         </span>
-                        {el.owner === activeAccount?.address &&
-                        !isTransferring ? (
-                          <Button
-                            onClick={() => {
-                              setOpen(true);
-                            }}
-                          >
-                            Send
-                            <SendIcon sx={{ ml: 1 }} fontSize="small" />
-                          </Button>
-                        ) : null}
                       </AvatarWithName>
-                      {isTransferring ? (
-                        <div>
-                          <Typography color="primary" variant="h6">
-                            Transferring ownership
-                          </Typography>
-                          <LinearProgress
-                            variant="buffer"
-                            value={50}
-                            valueBuffer={0}
-                          />
-                        </div>
-                      ) : null}
                       <PriceDisplay gap={0.5}>
                         <div className="price-label">Price</div>
                         <div
@@ -540,12 +406,6 @@ export const Token: React.FC = () => {
             </Grid>*/}
         </Container>
       ) : null}
-      <AddressModal
-        title="Enter address to send NFT"
-        open={open}
-        handleClose={() => setOpen(false)}
-        onSave={handleTransfer}
-      />
     </Layout>
   );
 };
