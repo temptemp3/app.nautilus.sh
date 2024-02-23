@@ -1,11 +1,26 @@
 import React from "react";
 import Layout from "../../layouts/Default";
-import { Grid } from "@mui/material";
+import { Container, Grid, Typography } from "@mui/material";
 import Section from "../../components/Section";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
+import styled from "styled-components";
+
+const ExternalLinks = styled.ul`
+  & li {
+    margin-top: 10px;
+  }
+`;
+
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
 
 export const Collection: React.FC = () => {
   const { id } = useParams();
@@ -38,28 +53,78 @@ export const Collection: React.FC = () => {
   }, []);
   return (
     <Layout>
-      {nfts.length > 0 ? (
-        <Section title={nfts[0].metadata.name.replace(/[#0123456789 ]*$/, "")}>
-          <Grid container spacing={2}>
-            {nfts.map((el: any) => {
-              return (
-                <Grid item xs={6} sm={4} md={3} lg={2}>
-                  <img
-                    style={{ width: "100%", cursor: "pointer" }}
-                    src={el.metadata.image}
-                    alt={el.metadata.name}
-                    onClick={() =>
-                      navigate(
-                        `/collection/${el.contractId}/token/${el.tokenId}`
-                      )
-                    }
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Section>
-      ) : null}
+      <Container maxWidth="lg">
+        {nfts.length > 0 ? (
+          <Section
+            title={nfts[0].metadata.name.replace(/[#0123456789 ]*$/, "")}
+          >
+            <Grid container spacing={2}>
+              {nfts.map((el: any) => {
+                return (
+                  <Grid item xs={6} sm={4} md={3} lg={2}>
+                    <img
+                      style={{ width: "100%", cursor: "pointer" }}
+                      src={el.metadata.image}
+                      alt={el.metadata.name}
+                      onClick={() =>
+                        navigate(
+                          `/collection/${el.contractId}/token/${el.tokenId}`
+                        )
+                      }
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Section>
+        ) : null}
+        <Typography
+          sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
+          variant="h6"
+        >
+          External Links
+        </Typography>
+        <ExternalLinks
+          style={{
+            listStyle: "none",
+          }}
+        >
+          <li>
+            <StyledLink
+              target="_blank"
+              to={`https://nftnavigator.xyz/collection/${id}/`}
+              style={{ color: isDarkTheme ? "#fff" : "#000" }}
+            >
+              <img
+                src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
+                style={{
+                  height: "24px",
+                  width: "24px",
+                  borderRadius: "5px",
+                }}
+              />{" "}
+              NFT Navigator
+            </StyledLink>
+          </li>
+          <li>
+            <StyledLink
+              target="_blank"
+              to={`https://highforge.io/project/${id}`}
+              style={{ color: isDarkTheme ? "#fff" : "#000" }}
+            >
+              <img
+                src="https://highforge.io/apple-touch-icon.png"
+                style={{
+                  height: "24px",
+                  width: "24px",
+                  borderRadius: "5px",
+                }}
+              />{" "}
+              High Forge
+            </StyledLink>
+          </li>
+        </ExternalLinks>
+      </Container>
     </Layout>
   );
 };

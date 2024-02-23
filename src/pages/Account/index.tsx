@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import NFTCard from "../../components/NFTCard";
 import Section from "../../components/Section";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
@@ -20,6 +20,20 @@ import styled from "styled-components";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
+
+const ExternalLinks = styled.ul`
+  & li {
+    margin-top: 10px;
+  }
+`;
+
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
 
 const AccountLabel = styled.div`
   font-family: Nohemi;
@@ -159,6 +173,29 @@ export const Account: React.FC = () => {
             );
           })}
         </Grid>
+        <ExternalLinks
+          style={{
+            listStyle: "none",
+          }}
+        >
+          <li>
+            <StyledLink
+              target="_blank"
+              to={`https://nftnavigator.xyz/portfolio/${id?.split(",")[0]}/`}
+              style={{ color: isDarkTheme ? "#fff" : "#000" }}
+            >
+              <img
+                src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
+                style={{
+                  height: "24px",
+                  width: "24px",
+                  borderRadius: "5px",
+                }}
+              />{" "}
+              NFT Navigator
+            </StyledLink>
+          </li>
+        </ExternalLinks>
       </Container>
     </Layout>
   );

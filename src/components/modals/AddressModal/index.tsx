@@ -6,6 +6,7 @@ interface AddressModalProps {
   handleClose: () => void;
   onSave: (address: string) => void;
   title?: string;
+  buttonText?: string;
 }
 
 const AddressModal: React.FC<AddressModalProps> = ({
@@ -13,6 +14,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
   handleClose,
   onSave,
   title = "Enter Address",
+  buttonText = "Send",
 }) => {
   const [address, setAddress] = useState("");
 
@@ -50,7 +52,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
           margin="normal"
         />
         <Button variant="contained" onClick={handleSave}>
-          Save
+          {buttonText}
         </Button>
         <Button variant="contained" onClick={handleClose}>
           Cancel

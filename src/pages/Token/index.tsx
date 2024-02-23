@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import NFTCard from "../../components/NFTCard";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
@@ -35,6 +35,14 @@ import { getAlgorandClients } from "../../wallets";
 
 import algosdk from "algosdk";
 import { arc72 } from "ulujs";
+
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -320,10 +328,10 @@ export const Token: React.FC = () => {
   return (
     <Layout>
       {nfts.length > 0 ? (
-        <Container>
+        <Container sx={{ mt: 5 }}>
           <Grid
             sx={{
-              padding: "48px",
+              //padding: "48px",
               borderRadius: "16px",
               border: "1px",
               alignItems: "center",
@@ -473,32 +481,35 @@ export const Token: React.FC = () => {
             })}
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ width: "100%" }}>
-              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                  value={value}
-                  onChange={handleChange}
-                  aria-label="basic tabs example"
+            <Typography
+              sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
+              variant="h6"
+            >
+              External Links
+            </Typography>
+            <ul
+              style={{
+                listStyle: "none",
+              }}
+            >
+              <li>
+                <StyledLink
+                  target="_blank"
+                  to={`https://nftnavigator.xyz/collection/${id}/token/${tid}`}
+                  style={{ color: isDarkTheme ? "#fff" : "#000" }}
                 >
-                  <Tab label="History" />
-                  <Tab label="Information" />
-                  <Tab label="Attributes" />
-                  <Tab label="Offers" />
-                </Tabs>
-              </Box>
-              <CustomTabPanel value={value} index={0}>
-                History
-              </CustomTabPanel>
-              <CustomTabPanel value={value} index={1}>
-                Information
-              </CustomTabPanel>
-              <CustomTabPanel value={value} index={2}>
-                Attributes
-              </CustomTabPanel>
-              <CustomTabPanel value={value} index={3}>
-                Offerse
-              </CustomTabPanel>
-            </Box>
+                  <img
+                    src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
+                    style={{
+                      height: "24px",
+                      width: "24px",
+                      borderRadius: "5px",
+                    }}
+                  />{" "}
+                  NFT Navigator
+                </StyledLink>
+              </li>
+            </ul>
           </Grid>
           {/*<Grid item xs={12}>
             <MoreFrom style={{ color: isDarkTheme ? "#FFFFFF" : undefined }}>
