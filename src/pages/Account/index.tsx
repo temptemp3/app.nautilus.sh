@@ -118,7 +118,6 @@ export const Account: React.FC = () => {
   const handleCopy = (text: string) => () => {
     copy(text)
       .then(() => {
-        console.log("Copied!", { text });
         toast.success("Copied to clipboard!");
       })
       .catch((error) => {
@@ -360,7 +359,7 @@ export const Account: React.FC = () => {
           <li>
             <StyledLink
               target="_blank"
-              to={`https://nftnavigator.xyz/portfolio/${id?.split(",")[0]}/`}
+              to={`https://nftnavigator.xyz/portfolio/${id}`}
               style={{ color: isDarkTheme ? "#fff" : "#000" }}
             >
               <img
