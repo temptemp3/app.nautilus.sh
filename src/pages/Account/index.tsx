@@ -26,8 +26,9 @@ import { toast } from "react-toastify";
 import { useWallet } from "@txnlab/use-wallet";
 import SendIcon from "@mui/icons-material/Send";
 import { getAlgorandClients } from "../../wallets";
-import { arc72 } from "ulujs";
-import AddressModal from "../../components/modals/AddressModal";
+import { arc72, CONTRACT, abi } from "ulujs";
+import TransferModal from "../../components/modals/TransferModal";
+import algosdk from "algosdk";
 
 const ExternalLinks = styled.ul`
   & li {
@@ -167,8 +168,16 @@ export const Account: React.FC = () => {
   const [open, setOpen] = React.useState(false);
   const [isTransferring, setIsTransferring] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
-  const handleTransfer = async (addr: string) => {
+  const handleTransfer = async (addr: string, amount: string) => {
     try {
+      const amountN = Number(amount);
+      // TODO validate address
+      if (!addr) {
+        throw new Error("Address is required");
+      }
+      if (isNaN(amountN)) {
+        throw new Error("Invalid amount");
+      }
       setProgress(25);
       setIsTransferring(true);
       const nft: any = nfts[selected];
@@ -177,6 +186,18 @@ export const Account: React.FC = () => {
       const ci = new arc72(contractId, algodClient, indexerClient, {
         acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
       });
+      const builder: any = {
+        arc72: new CONTRACT(
+          contractId,
+          algodClient,
+          indexerClient,
+          abi.arc72,
+          { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
+          undefined,
+          undefined,
+          true
+        ),
+      };
       const arc72_ownerOfR = await ci.arc72_ownerOf(tokenId);
       if (!arc72_ownerOfR.success) {
         throw new Error("arc72_ownerOf failed in simulate");
@@ -185,35 +206,84 @@ export const Account: React.FC = () => {
       if (arc72_ownerOf !== activeAccount?.address) {
         throw new Error("arc72_ownerOf not connected");
       }
-      const arc72_transferFromR = await ci.arc72_transferFrom(
-        activeAccount?.address || "",
-        addr,
-        BigInt(tokenId),
-        true,
-        false
+      const customTxn = (
+        await Promise.all([
+          builder.arc72.arc72_transferFrom(
+            activeAccount?.address || "",
+            addr,
+            BigInt(tokenId)
+          ),
+        ])
+      ).map(({ obj }) => obj);
+      const ciCustom = new CONTRACT(
+        contractId,
+        algodClient,
+        indexerClient,
+        {
+          name: "",
+          desc: "",
+          methods: [
+            {
+              name: "custom",
+              args: [],
+              returns: {
+                type: "void",
+              },
+            },
+          ],
+          events: [],
+        },
+        { addr: activeAccount?.address || "", sk: new Uint8Array(0) }
       );
-      if (!arc72_transferFromR.success) {
-        throw new Error("arc72_transferFrom failed in simulate");
+      ciCustom.setExtraTxns(customTxn);
+      // ------------------------------------------
+      // Add payment if necessary
+      //   Aust arc72 pays for the box cost if the ctcAddr balance - minBalance < box cost
+      const BalanceBoxCost = 28500;
+      const accInfo = await algodClient
+        .accountInformation(algosdk.getApplicationAddress(contractId))
+        .do();
+      const availableBalance = accInfo.amount - accInfo["min-balance"];
+      const extraPaymentAmount =
+        availableBalance < BalanceBoxCost
+          ? BalanceBoxCost // Pay whole box cost instead of partial cost, BalanceBoxCost - availableBalance
+          : 0;
+      ciCustom.setPaymentAmount(extraPaymentAmount);
+      const transfers = [];
+      if (amountN > 0) {
+        transfers.push([Math.floor(amountN * 1e6), addr]);
       }
-      const txns = arc72_transferFromR.txns;
+      ciCustom.setTransfers(transfers);
+      // ------------------------------------------
+      const customR = await ciCustom.custom();
+      if (!customR.success) {
+        throw new Error("custom failed in simulate");
+      }
+      const txns = customR.txns;
       setProgress(50);
       const res = await signTransactions(
-        txns.map((txn) => new Uint8Array(Buffer.from(txn, "base64")))
+        txns.map((txn: string) => new Uint8Array(Buffer.from(txn, "base64")))
       ).then(sendTransactions);
       setProgress(75);
       toast.success(`NFT Transfer successful!`);
       setProgress(100);
-      setNfts([
-        ...nfts.slice(0, selected),
-        { ...nft, owner: addr },
-        ...nfts.slice(selected + 1),
-      ]);
+      if (connectedAccounts.map((a) => a.address).includes(addr)) {
+        setNfts([
+          ...nfts.slice(0, selected),
+          { ...nft, owner: addr },
+          ...nfts.slice(selected + 1),
+        ]);
+      } else {
+        setNfts([...nfts.slice(0, selected), ...nfts.slice(selected + 1)]);
+      }
     } catch (e: any) {
+      console.log(e);
       toast.error(e.message);
     } finally {
       setIsTransferring(false);
       setOpen(false);
       setProgress(0);
+      setSelected(-1);
     }
   };
 
@@ -298,6 +368,12 @@ export const Account: React.FC = () => {
                 >
                   Transfer
                 </Button>
+                <Link
+                  to={`https://nftnavigator.xyz/collection/${nfts[selected].contractId}/token/${nfts[selected].tokenId}`}
+                  target="_blank"
+                >
+                  <Button size="large">View in NFT Navigator</Button>
+                </Link>
                 <Button
                   onClick={() => {
                     setSelected(-1);
@@ -375,7 +451,7 @@ export const Account: React.FC = () => {
           </li>
         </ExternalLinks>
       </Container>
-      <AddressModal
+      <TransferModal
         title="Transfer NFT"
         loading={isTransferring}
         open={open}

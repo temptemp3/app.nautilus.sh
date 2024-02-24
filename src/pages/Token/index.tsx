@@ -296,50 +296,54 @@ export const Token: React.FC = () => {
                             color: isDarkTheme ? "#FFFFFF" : undefined,
                           }}
                         >
-                          1,000 VOI
+                          Not Available
                         </div>
                       </PriceDisplay>
-                      <Stack
-                        direction="row"
-                        gap={2}
-                        sx={{ alignItems: "center" }}
-                      >
-                        <BuyButton src={ButtonBuy} alt="Buy Button" />
-                        <OfferButton src={ButtonOffer} alt="Offer Button" />
-                      </Stack>
-                      <AuctionContainer direction="row">
-                        <div className="auction-left">
-                          <Stack gap={0.5}>
-                            <div className="auction-label">Auction</div>
-                            <div
-                              className="auction-value"
-                              style={{
-                                color: isDarkTheme ? "#FFFFFF" : undefined,
-                              }}
+                      {false ? (
+                        <Stack
+                          direction="row"
+                          gap={2}
+                          sx={{ alignItems: "center" }}
+                        >
+                          <BuyButton src={ButtonBuy} alt="Buy Button" />
+                          <OfferButton src={ButtonOffer} alt="Offer Button" />
+                        </Stack>
+                      ) : null}
+                      {false ? (
+                        <AuctionContainer direction="row">
+                          <div className="auction-left">
+                            <Stack gap={0.5}>
+                              <div className="auction-label">Auction</div>
+                              <div
+                                className="auction-value"
+                                style={{
+                                  color: isDarkTheme ? "#FFFFFF" : undefined,
+                                }}
+                              >
+                                1,000 VOI
+                              </div>
+                            </Stack>
+                          </div>
+                          <div className="auction-right">
+                            <Stack
+                              className="alarm-container"
+                              direction="row"
+                              gap={2}
                             >
-                              1,000 VOI
-                            </div>
-                          </Stack>
-                        </div>
-                        <div className="auction-right">
-                          <Stack
-                            className="alarm-container"
-                            direction="row"
-                            gap={2}
-                          >
-                            <img src={IconAlarm} alt="Alarm Icon" />
-                            <div
-                              className="time-remaining"
-                              style={{
-                                color: isDarkTheme ? "#FFFFFF" : undefined,
-                              }}
-                            >
-                              36h 10m 34s
-                            </div>
-                          </Stack>
-                          <BidButton src={ButtonBid} alt="Bid Button" />
-                        </div>
-                      </AuctionContainer>
+                              <img src={IconAlarm} alt="Alarm Icon" />
+                              <div
+                                className="time-remaining"
+                                style={{
+                                  color: isDarkTheme ? "#FFFFFF" : undefined,
+                                }}
+                              >
+                                36h 10m 34s
+                              </div>
+                            </Stack>
+                            <BidButton src={ButtonBid} alt="Bid Button" />
+                          </div>
+                        </AuctionContainer>
+                      ) : null}
                     </Stack>
                   </Grid>
                 </>
