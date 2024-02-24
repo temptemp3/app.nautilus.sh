@@ -156,6 +156,11 @@ export const Account: React.FC = () => {
             metadata: tm,
           });
         }
+        nfts.sort((a, b) => {
+          return a.contractId !== b.contractId
+            ? b.contractId - a.contractId
+            : a.tokenId - b.tokenId;
+        });
         setNfts(nfts);
       })();
     } catch (e) {
