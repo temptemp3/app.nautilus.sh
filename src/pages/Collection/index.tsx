@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
 import styled from "styled-components";
+import { MarketplaceContext } from "../../store/MarketplaceContext";
 
 const ExternalLinks = styled.ul`
   & li {
@@ -23,13 +24,19 @@ const StyledLink = styled(Link)`
 `;
 
 export const Collection: React.FC = () => {
+  /* Marketplace */
+  const { forSale } = React.useContext(MarketplaceContext);
+  /* Router */
   const { id } = useParams();
   const navigate = useNavigate();
+  /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+  /* NFT Navigator */
   const [nfts, setNfts] = React.useState<any>([]);
   React.useEffect(() => {
+    if (!forSale) return;
     try {
       (async () => {
         const {
@@ -39,6 +46,13 @@ export const Collection: React.FC = () => {
         );
         const nfts = [];
         for (const t of res) {
+          if (
+            !forSale
+              .map((el: any) => [Number(el.cId), Number(el.tId)].join(":"))
+              .includes(`${t.contractId}:${t.tokenId}`)
+          ) {
+            continue;
+          }
           const tm = JSON.parse(t.metadata);
           nfts.push({
             ...t,
@@ -50,7 +64,7 @@ export const Collection: React.FC = () => {
     } catch (e) {
       console.log(e);
     }
-  }, []);
+  }, [forSale]);
   return (
     <Layout>
       <Container maxWidth="lg">

@@ -10,14 +10,14 @@ const NFTCardWrapper = styled.div`
     rgb(245, 211, 19) 0%,
     rgb(55, 19, 18) 100%
   );
-  background-color: rgba(255, 255, 255, 1);
+  //background-color: rgba(255, 255, 255, 1);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  height: 481px;
   position: relative;
   transition: all 0.1s ease;
-  width: 305px;
+  //height: 481px;
+  //width: 305px;
   overflow: hidden;
   cursor: pointer;
   &:hover {
@@ -25,7 +25,7 @@ const NFTCardWrapper = styled.div`
   }
   & .image {
     align-self: stretch;
-    height: 305px;
+    //height: 305px;
     position: relative;
     width: 100%;
   }
@@ -40,7 +40,7 @@ const NFTCardWrapper = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
-    height: 176px;
+    //height: 176px;
     padding: 20px 30px 25px;
     position: relative;
     width: 100%;

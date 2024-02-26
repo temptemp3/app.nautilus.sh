@@ -8,33 +8,32 @@ import {
   InputLabel,
   Box,
   Grid,
+  Typography,
 } from "@mui/material";
+import { useWallet } from "@txnlab/use-wallet";
 import PaymentCurrencyRadio from "../../PaymentCurrencyRadio";
 
-interface ListSaleModalProps {
+interface BuySaleModalProps {
   open: boolean;
   loading: boolean;
   handleClose: () => void;
-  onSave: (address: string, amount: string) => Promise<void>;
+  onSave: () => Promise<void>;
   title?: string;
   buttonText?: string;
   image: string;
-  royalties: number;
+  price: string;
 }
 
-const ListSaleModal: React.FC<ListSaleModalProps> = ({
+const BuySaleModal: React.FC<BuySaleModalProps> = ({
   open,
   loading,
   handleClose,
   onSave,
   image,
-  royalties,
+  price,
   title = "Enter Address",
   buttonText = "Send",
 }) => {
-  /* Price */
-  const [price, setPrice] = useState("");
-
   /* Payment currency */
 
   const [currency, setCurrency] = useState<string>("VIO");
@@ -46,7 +45,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   /* Modal */
 
   const handleSave = async () => {
-    await onSave(price, currency);
+    await onSave();
     handleClose();
   };
 
@@ -89,63 +88,32 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                   }}
                 >
                   <InputLabel htmlFor="price">Price</InputLabel>
-                  <TextField
-                    id="price"
-                    label="Price"
-                    variant="outlined"
-                    value={price}
-                    fullWidth
-                    margin="normal"
-                    onChange={(e) => setPrice(e.target.value)}
-                  />
-                  <Box sx={{ mt: 2 }}>
-                    <PaymentCurrencyRadio
-                      selectedValue={currency}
-                      onCurrencyChange={handleCurrencyChange}
-                    />
-                  </Box>
+                  <Typography variant="h5" gutterBottom>
+                    {price}
+                  </Typography>
                 </Box>
               </Grid>
-              <Grid xs={12}>
-                <Box
-                  sx={{
-                    p: 1,
-                  }}
-                >
-                  <InputLabel htmlFor="royalties">You Recieve</InputLabel>
-                  <TextField
-                    id="proceeds"
-                    label="Proceeds"
-                    variant="outlined"
-                    value={(
-                      ((100 - royalties) * Number(price)) /
-                      100
-                    ).toLocaleString()}
+              <Grid item xs={12}>
+                <Stack sx={{ mt: 3 }} gap={2}>
+                  <Button
+                    size="large"
                     fullWidth
-                    margin="normal"
-                    disabled
-                  />
-                </Box>
+                    variant="contained"
+                    onClick={handleSave}
+                  >
+                    {buttonText}
+                  </Button>
+                  <Button
+                    size="large"
+                    fullWidth
+                    variant="outlined"
+                    onClick={handleClose}
+                  >
+                    Cancel
+                  </Button>
+                </Stack>
               </Grid>
             </Grid>
-            <Stack sx={{ mt: 3 }} gap={2}>
-              <Button
-                size="large"
-                fullWidth
-                variant="contained"
-                onClick={handleSave}
-              >
-                {buttonText}
-              </Button>
-              <Button
-                size="large"
-                fullWidth
-                variant="outlined"
-                onClick={handleClose}
-              >
-                Cancel
-              </Button>
-            </Stack>
           </>
         ) : (
           <div
@@ -165,4 +133,4 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   );
 };
 
-export default ListSaleModal;
+export default BuySaleModal;

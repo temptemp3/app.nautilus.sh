@@ -6,6 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
+import { MarketplaceContext } from "../../store/MarketplaceContext";
+import NftCard from "../../components/NFTCard";
+import { decodePrice, decodeTokenId } from "../../utils/mp";
 
 function shuffleArray<T>(array: T[]): T[] {
   // Create a copy of the original array to avoid mutating the original array
@@ -23,15 +26,19 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const Home: React.FC = () => {
+  /* Marketplace */
+  const { forSale } = React.useContext(MarketplaceContext);
+  console.log({ forSale });
   /* Router */
   const navigate = useNavigate();
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
-  /* NFT Navigator */
+  /* NFT Navigator Collections */
   const [collections, setCollections] = React.useState<any>([]);
   React.useEffect(() => {
+    if (!forSale) return;
     try {
       (async () => {
         const {
@@ -41,6 +48,11 @@ export const Home: React.FC = () => {
         );
         const collections = [];
         for (const c of res) {
+          if (
+            !forSale.map((el: any) => Number(el.cId)).includes(c.contractId)
+          ) {
+            continue;
+          }
           const t = c.firstToken;
           if (!!t) {
             const tm = JSON.parse(t.metadata);
@@ -55,9 +67,11 @@ export const Home: React.FC = () => {
     } catch (e) {
       console.log(e);
     }
-  }, []);
+  }, [forSale]);
+  /* NFT Navigator NFTs */
   const [nfts, setNfts] = React.useState<any>([]);
   React.useEffect(() => {
+    if (!forSale) return;
     try {
       (async () => {
         const {
@@ -67,6 +81,13 @@ export const Home: React.FC = () => {
         );
         const nfts = [];
         for (const t of res) {
+          if (
+            !forSale
+              .map((el: any) => [Number(el.cId), Number(el.tId)].join(":"))
+              .includes(`${t.contractId}:${t.tokenId}`)
+          ) {
+            continue;
+          }
           const tm = JSON.parse(t.metadata);
           nfts.push({
             ...t,
@@ -78,32 +99,45 @@ export const Home: React.FC = () => {
     } catch (e) {
       console.log(e);
     }
-  }, []);
+  }, [forSale]);
   return (
     <Layout>
-      <Section title="Trending Collections">
-        <Grid container spacing={2}>
-          {collections.slice(0, 4).map((el: any) => {
-            return (
-              <Grid item xs={6} sm={4} md={3}>
-                <img
-                  style={{ width: "100%", cursor: "pointer", borderRadius: 10 }}
-                  src={el.metadata.image}
-                  alt={el.metadata.name}
-                  onClick={() => navigate(`/collection/${el.contractId}`)}
-                />
-              </Grid>
-            );
-          })}
-        </Grid>
+      <Section title="Collections">
+        {collections.length > 0 ? (
+          <Grid container spacing={2}>
+            {collections.slice(0, 16).map((el: any) => {
+              return (
+                <Grid item xs={6} sm={4} md={3} lg={2}>
+                  <img
+                    style={{
+                      width: "100%",
+                      cursor: "pointer",
+                      borderRadius: 10,
+                    }}
+                    src={el.metadata.image}
+                    alt={el.metadata.name}
+                    onClick={() => navigate(`/collection/${el.contractId}`)}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        ) : (
+          "No collections available for sale."
+        )}
       </Section>
       <Section title="Recently Listed">
-        <Grid container spacing={3} sx={{ justifyContent: "space-evenly" }}>
-          {nfts.slice(0, 24).map((el: any) => {
-            console.log({ el });
-            return (
-              <Grid item xs={6} sm={4} md={3} lg={2}>
-                <img
+        {nfts.length > 0 ? (
+          <Grid container spacing={2}>
+            {nfts.slice(0, 24).map((el: any) => {
+              const listing = forSale.find(
+                (l: any) =>
+                  Number(l.cId) === el.contractId &&
+                  Number(l.tId) === el.tokenId
+              );
+              return (
+                <Grid item xs={6} sm={4} md={3} lg={2}>
+                  {/*<img
                   style={{
                     width: "100%",
                     cursor: "pointer",
@@ -114,11 +148,29 @@ export const Home: React.FC = () => {
                   onClick={() =>
                     navigate(`/collection/${el.contractId}/token/${el.tokenId}`)
                   }
-                />
-              </Grid>
-            );
-          })}
-        </Grid>
+                />*/}
+                  {listing ? (
+                    <NftCard
+                      nftName={el.metadata.name}
+                      image={el.metadata.image}
+                      owner={el.owner}
+                      price={`${(decodePrice(listing.lPrc) || 0) / 1e6} ${
+                        decodeTokenId(listing.lPrc) === 0 ? "VOI" : "VIA"
+                      }`}
+                      onClick={() =>
+                        navigate(
+                          `/collection/${el.contractId}/token/${el.tokenId}`
+                        )
+                      }
+                    />
+                  ) : null}
+                </Grid>
+              );
+            })}
+          </Grid>
+        ) : (
+          "No NFTs available for sale."
+        )}
       </Section>
     </Layout>
   );
