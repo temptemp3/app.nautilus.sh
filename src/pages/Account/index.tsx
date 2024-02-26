@@ -195,10 +195,17 @@ export const Account: React.FC = () => {
 
   const [activeTab, setActiveTab] = React.useState(0);
 
+  const nft = useMemo(() => {
+    const nft = nfts[selected];
+    console.log({ nft });
+    return nft;
+  }, [nfts, selected]);
+
   const handleListSale = async (price: string, currency: string) => {
     const priceN = Number(price);
     const currencyN = Number(currency);
     try {
+      if (Math.random() > 0) throw new Error("Under Maintenance");
       if (isNaN(priceN)) {
         throw new Error("Invalid price");
       }
@@ -209,7 +216,7 @@ export const Account: React.FC = () => {
         throw new Error("No active account");
       }
       setIsListing(true);
-      const nft: any = nfts[selected];
+
       const { contractId, tokenId } = nft;
       const { algodClient, indexerClient } = getAlgorandClients();
 
@@ -489,6 +496,7 @@ export const Account: React.FC = () => {
       setSelected(-1);
     }
   };
+
   const handleDeleteListing = async (listingId: number) => {
     try {
       const ci = new CONTRACT(
@@ -952,13 +960,12 @@ export const Account: React.FC = () => {
         onSave={handleTransfer}
       />
       <ListSaleModal
-        image={nfts[selected]?.metadata.image}
         title="List NFT for Sale"
         loading={isListing}
         open={openListSale}
         handleClose={() => setOpenListSale(false)}
         onSave={handleListSale}
-        royalties={nfts[selected]?.royalties.royaltyPercent || 0 + 5}
+        nft={nft}
       />
     </Layout>
   );

@@ -27,6 +27,8 @@ const NavRoot = styled.nav`
   align-items: center;
   width: 100%;
   padding: 20px 0px;
+  border-bottom: 1px solid #eaebf0;
+  backdrop-filter: blur(32px);
 `;
 
 const NavContainer = styled.div`
@@ -35,6 +37,9 @@ const NavContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 0px 80px;
+  @media screen and (min-width: 960px) {
+    padding: 0px 20px;
+  }
 `;
 
 const NavLogo = styled.img``;
@@ -145,7 +150,12 @@ const Navbar = () => {
   const id = canBeOpen ? "transition-popper" : undefined;
 
   return (
-    <NavRoot style={{ backgroundColor: isDarkTheme ? "#161717" : "#ffffff" }}>
+    <NavRoot
+      style={{
+        backgroundColor: isDarkTheme ? "#161717" : undefined,
+        borderBottom: isDarkTheme ? "none" : undefined,
+      }}
+    >
       <NavContainer>
         <Link to="/">
           <NavLogo src={isDarkTheme ? DarkLogo : LightLogo} />

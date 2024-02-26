@@ -266,10 +266,21 @@ export const Token: React.FC = () => {
   const [isBuying, setIsBuying] = React.useState(false);
   const handleBuy = async () => {
     try {
+      throw new Error("Under Maintenance");
       if (!activeAccount) {
         throw new Error("Please connect your wallet first!");
       }
       setIsBuying(true);
+      const collectionAddr = algosdk.getApplicationAddress(nft.contractId);
+      console.log({ collectionAddr, contractId: nft.contractId });
+      const collectionAccountInfo = await algodClient
+        .accountInformation(collectionAddr)
+        .do();
+      console.log({ collectionAccountInfo });
+      const { ammount, ["min-balance"]: minBalance } = collectionAccountInfo;
+      const availableBalance = ammount - minBalance;
+      const boxCost = 28500;
+      const addBoxPayment = availableBalance < boxCost;
       const [pType, ...prc] = listing.lPrc;
       switch (pType) {
         case "00": {
@@ -297,11 +308,14 @@ export const Token: React.FC = () => {
               events: [],
             },
             {
-              addr: activeAccount.address,
+              addr: activeAccount?.address || "",
               sk: new Uint8Array(0),
             }
           );
           const price = decodePrice(listing.lPrc) || 0;
+          if (addBoxPayment) {
+            ci.setTransfers([[28500, collectionAddr]]);
+          }
           ci.setFee(10000);
           ci.setPaymentAmount(price);
           ci.setAccounts([
@@ -349,7 +363,7 @@ export const Token: React.FC = () => {
                 ],
                 events: [],
               },
-              { addr: activeAccount.address, sk: new Uint8Array(0) },
+              { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
               undefined,
               undefined,
               true
@@ -384,7 +398,7 @@ export const Token: React.FC = () => {
                 ],
                 events: [],
               },
-              { addr: activeAccount.address, sk: new Uint8Array(0) },
+              { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
               undefined,
               undefined,
               true
@@ -431,6 +445,9 @@ export const Token: React.FC = () => {
 
           console.log({ customTxn });
 
+          if (addBoxPayment) {
+            ci.setTransfers([[28500, collectionAddr]]);
+          }
           ci.setPaymentAmount(28500);
           // creator manager of arc200
           ci.setAccounts([
@@ -456,7 +473,7 @@ export const Token: React.FC = () => {
       }
       setNft({
         ...nft,
-        owner: activeAccount.address,
+        owner: activeAccount?.address || "",
         approved: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
       });
       toast.success("NFT purchase successful!");

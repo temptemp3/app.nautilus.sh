@@ -18,8 +18,9 @@ interface ListSaleModalProps {
   onSave: (address: string, amount: string) => Promise<void>;
   title?: string;
   buttonText?: string;
-  image: string;
-  royalties: number;
+  //image: string;
+  //royalties: number;
+  nft: any;
 }
 
 const ListSaleModal: React.FC<ListSaleModalProps> = ({
@@ -27,8 +28,9 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   loading,
   handleClose,
   onSave,
-  image,
-  royalties,
+  //image,
+  //royalties,
+  nft,
   title = "Enter Address",
   buttonText = "Send",
 }) => {
@@ -77,7 +79,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <img
-                  src={image}
+                  src={nft?.image || ""}
                   alt="NFT"
                   style={{ width: "100%", borderRadius: "25px" }}
                 />
@@ -118,7 +120,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     label="Proceeds"
                     variant="outlined"
                     value={(
-                      ((100 - royalties) * Number(price)) /
+                      ((100 - nft?.royalties?.royaltyPercent || 100) * Number(price)) /
                       100
                     ).toLocaleString()}
                     fullWidth

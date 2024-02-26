@@ -9,6 +9,69 @@ import axios from "axios";
 import { MarketplaceContext } from "../../store/MarketplaceContext";
 import NftCard from "../../components/NFTCard";
 import { decodePrice, decodeTokenId } from "../../utils/mp";
+import styled from "styled-components";
+
+const SectinoHeading = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 45px;
+`;
+
+const SectionTitle = styled.h2`
+  color: #93f;
+  text-align: center;
+  leading-trim: both;
+  text-edge: cap;
+  font-feature-settings: "clig" off, "liga" off;
+  font-family: Nohemi;
+  font-size: 40px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 100%; /* 40px */
+`;
+
+const SectionMoreButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+`;
+
+const SectionMoreButton = styled.button`
+  /* Layout */
+  display: flex;
+  padding: 12px 20px;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  /* Style */
+  border-radius: 100px;
+  border: 1px solid #93f;
+  /* Shadow/XSM */
+  box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.04);
+  /* Style/Extra */
+  background-color: transparent;
+  &::after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    background: url("/arrow-narrow-up-right.svg") no-repeat;
+    position: relative;
+    display: inline-block;
+  }
+`;
+
+const SectionMoreButtonText = styled.div`
+  color: #93f;
+  /* Text Button/Semibold Large */
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 22px; /* 146.667% */
+  letter-spacing: 0.1px;
+`;
 
 function shuffleArray<T>(array: T[]): T[] {
   // Create a copy of the original array to avoid mutating the original array
@@ -102,30 +165,36 @@ export const Home: React.FC = () => {
   }, [forSale]);
   return (
     <Layout>
-      <Section title="Collections">
-        {collections.length > 0 ? (
-          <Grid container spacing={2}>
-            {collections.slice(0, 16).map((el: any) => {
-              return (
-                <Grid item xs={6} sm={4} md={3} lg={2}>
-                  <img
-                    style={{
-                      width: "100%",
-                      cursor: "pointer",
-                      borderRadius: 10,
-                    }}
-                    src={el.metadata.image}
-                    alt={el.metadata.name}
-                    onClick={() => navigate(`/collection/${el.contractId}`)}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-        ) : (
-          "No collections available for sale."
-        )}
-      </Section>
+      <SectinoHeading>
+        <SectionTitle>New Listings</SectionTitle>
+        <SectionMoreButtonContainer>
+          <SectionMoreButton>
+            <SectionMoreButtonText>View All</SectionMoreButtonText>
+          </SectionMoreButton>
+        </SectionMoreButtonContainer>
+      </SectinoHeading>
+      {collections.length > 0 ? (
+        <Grid container spacing={2}>
+          {collections.slice(0, 16).map((el: any) => {
+            return (
+              <Grid item xs={6} sm={4} md={3} lg={2}>
+                <img
+                  style={{
+                    width: "100%",
+                    cursor: "pointer",
+                    borderRadius: 10,
+                  }}
+                  src={el.metadata.image}
+                  alt={el.metadata.name}
+                  onClick={() => navigate(`/collection/${el.contractId}`)}
+                />
+              </Grid>
+            );
+          })}
+        </Grid>
+      ) : (
+        "No collections available for sale."
+      )}
       <Section title="Recently Listed">
         {nfts.length > 0 ? (
           <Grid container spacing={2}>
