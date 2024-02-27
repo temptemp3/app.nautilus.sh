@@ -39,7 +39,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
 
   /* Payment currency */
 
-  const [currency, setCurrency] = useState<string>("VIO");
+  const [currency, setCurrency] = useState<string>("VOI");
 
   const handleCurrencyChange = (newCurrency: string) => {
     setCurrency(newCurrency);
@@ -79,7 +79,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <img
-                  src={nft?.image || ""}
+                  src={nft?.metadata?.image || ""}
                   alt="NFT"
                   style={{ width: "100%", borderRadius: "25px" }}
                 />
@@ -120,7 +120,8 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     label="Proceeds"
                     variant="outlined"
                     value={(
-                      ((100 - nft?.royalties?.royaltyPercent || 100) * Number(price)) /
+                      ((100 - ((nft?.royalties?.royaltyPercent || 100) + 5)) *
+                        Number(price)) /
                       100
                     ).toLocaleString()}
                     fullWidth

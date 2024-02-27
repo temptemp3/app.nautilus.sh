@@ -30,9 +30,11 @@ import { arc72, CONTRACT, abi } from "ulujs";
 import TransferModal from "../../components/modals/TransferModal";
 import ListSaleModal from "../../components/modals/ListSaleModal";
 import algosdk from "algosdk";
-import { ctcInfoMp206 } from "../../contants/mp";
+import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
 import { MarketplaceContext } from "../../store/MarketplaceContext";
 import { decodeRoyalties } from "../../utils/hf";
+
+const { algodClient, indexerClient } = getAlgorandClients();
 
 const ExternalLinks = styled.ul`
   & li {
@@ -205,7 +207,6 @@ export const Account: React.FC = () => {
     const priceN = Number(price);
     const currencyN = Number(currency);
     try {
-      if (Math.random() > 0) throw new Error("Under Maintenance");
       if (isNaN(priceN)) {
         throw new Error("Invalid price");
       }
@@ -218,7 +219,6 @@ export const Account: React.FC = () => {
       setIsListing(true);
 
       const { contractId, tokenId } = nft;
-      const { algodClient, indexerClient } = getAlgorandClients();
 
       const ciArc72 = new arc72(contractId, algodClient, indexerClient, {
         acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
@@ -229,7 +229,6 @@ export const Account: React.FC = () => {
       }
       const arc72_ownerOf = arc72_ownerOfR.returnValue;
 
-      const ListingBoxCost = 131300;
       const builder = {
         arc72: new CONTRACT(
           contractId,
@@ -501,8 +500,8 @@ export const Account: React.FC = () => {
     try {
       const ci = new CONTRACT(
         ctcInfoMp206,
-        getAlgorandClients().algodClient,
-        getAlgorandClients().indexerClient,
+        algodClient,
+        indexerClient,
         {
           name: "",
           desc: "",
@@ -560,7 +559,6 @@ export const Account: React.FC = () => {
       setIsTransferring(true);
       const nft: any = nfts[selected];
       const { contractId, tokenId } = nft;
-      const { algodClient, indexerClient } = getAlgorandClients();
       const ci = new arc72(contractId, algodClient, indexerClient, {
         acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
       });
@@ -761,8 +759,8 @@ export const Account: React.FC = () => {
                       onClick={async () => {
                         const ci = new arc72(
                           nfts[selected].contractId,
-                          getAlgorandClients().algodClient,
-                          getAlgorandClients().indexerClient,
+                          algodClient,
+                          indexerClient,
                           {
                             acc: {
                               addr: activeAccount?.address || "",
@@ -959,14 +957,14 @@ export const Account: React.FC = () => {
         handleClose={() => setOpen(false)}
         onSave={handleTransfer}
       />
-      <ListSaleModal
+      {nft ? <ListSaleModal
         title="List NFT for Sale"
         loading={isListing}
         open={openListSale}
         handleClose={() => setOpenListSale(false)}
         onSave={handleListSale}
         nft={nft}
-      />
+      /> : null}
     </Layout>
   );
 };

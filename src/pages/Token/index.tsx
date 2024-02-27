@@ -30,7 +30,7 @@ import { decodePrice, decodeTokenId } from "../../utils/mp";
 import NftCard from "../../components/NFTCard";
 import BuySaleModal from "../../components/modals/BuySaleModal";
 
-import { CONTRACT, arc72 } from "ulujs";
+import { CONTRACT, arc72, arc200 } from "ulujs";
 import { getAlgorandClients } from "../../wallets";
 import { ctcInfoMp206 } from "../../contants/mp";
 
@@ -266,7 +266,6 @@ export const Token: React.FC = () => {
   const [isBuying, setIsBuying] = React.useState(false);
   const handleBuy = async () => {
     try {
-      throw new Error("Under Maintenance");
       if (!activeAccount) {
         throw new Error("Please connect your wallet first!");
       }
@@ -277,14 +276,81 @@ export const Token: React.FC = () => {
         .accountInformation(collectionAddr)
         .do();
       console.log({ collectionAccountInfo });
-      const { ammount, ["min-balance"]: minBalance } = collectionAccountInfo;
-      const availableBalance = ammount - minBalance;
+      const { amount, ["min-balance"]: minBalance } = collectionAccountInfo;
+      console.log({ amount, minBalance });
+      const availableBalance = amount - minBalance;
       const boxCost = 28500;
+      console.log({ availableBalance, boxCost });
       const addBoxPayment = availableBalance < boxCost;
       const [pType, ...prc] = listing.lPrc;
       switch (pType) {
         case "00": {
+          const builder = {
+            mp: new CONTRACT(
+              ctcInfoMp206,
+              algodClient,
+              indexerClient,
+              {
+                name: "",
+                desc: "",
+                methods: [
+                  {
+                    name: "a_sale_buyNet",
+                    args: [
+                      {
+                        name: "listId",
+                        type: "uint256",
+                      },
+                    ],
+                    returns: {
+                      type: "void",
+                    },
+                  },
+                ],
+                events: [],
+              },
+              { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
+              undefined,
+              undefined,
+              true
+            ),
+          };
+
+          // const ci = new CONTRACT(
+          //   ctcInfoMp206,
+          //   algodClient,
+          //   indexerClient,
+          //   {
+          //     name: "",
+          //     desc: "",
+          //     methods: [
+          //       {
+          //         name: "a_sale_buyNet",
+          //         args: [
+          //           {
+          //             name: "listId",
+          //             type: "uint256",
+          //           },
+          //         ],
+          //         returns: {
+          //           type: "void",
+          //         },
+          //       },
+          //     ],
+          //     events: [],
+          //   },
+          //   {
+          //     addr: activeAccount?.address || "",
+          //     sk: new Uint8Array(0),
+          //   }
+          // );
+
+          const customTxn = (
+            await Promise.all([builder.mp.a_sale_buyNet(listing.lId)])
+          ).map(({ obj }) => obj);
+
           const ci = new CONTRACT(
+            //ptid,
             ctcInfoMp206,
             algodClient,
             indexerClient,
@@ -293,13 +359,8 @@ export const Token: React.FC = () => {
               desc: "",
               methods: [
                 {
-                  name: "a_sale_buyNet",
-                  args: [
-                    {
-                      name: "listId",
-                      type: "uint256",
-                    },
-                  ],
+                  name: "custom",
+                  args: [],
                   returns: {
                     type: "void",
                   },
@@ -312,33 +373,102 @@ export const Token: React.FC = () => {
               sk: new Uint8Array(0),
             }
           );
+
+          ci.setExtraTxns(customTxn);
           const price = decodePrice(listing.lPrc) || 0;
-          if (addBoxPayment) {
-            ci.setTransfers([[28500, collectionAddr]]);
-          }
           ci.setFee(10000);
           ci.setPaymentAmount(price);
-          ci.setAccounts([
-            listing.lAddr,
-            "RTKWX3FTDNNIHMAWHK5SDPKH3VRPPW7OS5ZLWN6RFZODF7E22YOBK2OGPE",
-          ]);
-          const a_sale_buyNetR = await ci.a_sale_buyNet(listing.lId);
-          console.log({ a_sale_buyNetR });
-          if (!a_sale_buyNetR.success) {
-            throw new Error("Failed to simulate buyNet");
-          }
+          ci.setEnableGroupResourceSharing(true);
+
+          // ci.setAccounts([
+          //   listing.lAddr,
+          //   "RTKWX3FTDNNIHMAWHK5SDPKH3VRPPW7OS5ZLWN6RFZODF7E22YOBK2OGPE",
+          // ]);
+          // const a_sale_buyNetR = await ci.a_sale_buyNet(listing.lId);
+          // console.log({ a_sale_buyNetR });
+          // if (!a_sale_buyNetR.success) {
+          //   throw new Error("Failed to simulate buyNet");
+          // }
+          // await signTransactions(
+          //   a_sale_buyNetR.txns.map(
+          //     (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+          //   )
+          // ).then(sendTransactions);
+
+          const customR = await ci.custom();
+          console.log({ customR });
           await signTransactions(
-            a_sale_buyNetR.txns.map(
+            customR.txns.map(
               (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
             )
           ).then(sendTransactions);
+
           break;
         }
         case "01": {
+          console.log({ prc });
           const [tId, tPrc] = prc;
           const ptid = Number("0x" + tId);
-          const tprc = Number("0x" + tPrc);
+          const tprc = Number("0x" + tPrc.slice(0, tPrc.length - 4));
           console.log({ ptid, tprc });
+          // conditional payment to collection for transfer
+          const ciArc200 = new arc200(ptid, algodClient, indexerClient);
+          const hasAllowanceR = await ciArc200.hasAllowance(
+            activeAccount.address,
+            collectionAddr
+          );
+          if (!hasAllowanceR.success) {
+            throw new Error("Failed to check allowance");
+          }
+          const hasAllowance = hasAllowanceR.returnValue;
+          if (hasAllowance === 0) {
+            const ci = new CONTRACT(
+              ptid,
+              algodClient,
+              indexerClient,
+              {
+                name: "",
+                desc: "",
+                methods: [
+                  {
+                    name: "arc200_approve",
+                    desc: "Approve spender for a token",
+                    args: [{ type: "address" }, { type: "uint256" }],
+                    returns: { type: "bool", desc: "Success" },
+                  },
+                ],
+                events: [],
+              },
+              { addr: activeAccount?.address || "", sk: new Uint8Array(0) }
+            );
+            ci.setPaymentAmount(28100);
+            const arc200_approveR = await ci.arc200_approve(
+              algosdk.getApplicationAddress(ctcInfoMp206),
+              0
+            );
+            if (!arc200_approveR.success) {
+              throw new Error("Failed to approve spender");
+            }
+            await signTransactions(
+              arc200_approveR.txns.map(
+                (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+              )
+            ).then(sendTransactions);
+          }
+
+          if (addBoxPayment) {
+            const paymentTxn =
+              algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+                from: activeAccount.address,
+                to: collectionAddr,
+                amount: 28500,
+                suggestedParams: await algodClient.getTransactionParams().do(),
+              });
+            await signTransactions([paymentTxn.toByte()]).then(
+              sendTransactions
+            );
+          }
+
           const builder = {
             mp: new CONTRACT(
               ctcInfoMp206,
@@ -405,8 +535,8 @@ export const Token: React.FC = () => {
             ),
           };
           const ci = new CONTRACT(
-            //ctcInfoMp206,
-            ptid,
+            //ptid,
+            ctcInfoMp206,
             algodClient,
             indexerClient,
             {
@@ -431,10 +561,6 @@ export const Token: React.FC = () => {
 
           const customTxn = (
             await Promise.all([
-              // builder.arc200.arc200_transfer(
-              //   algosdk.getApplicationAddress(ctcInfoMp206),
-              //   0
-              // ),
               builder.arc200.arc200_approve(
                 algosdk.getApplicationAddress(ctcInfoMp206),
                 tprc
@@ -444,17 +570,14 @@ export const Token: React.FC = () => {
           ).map(({ obj }) => obj);
 
           console.log({ customTxn });
-
-          if (addBoxPayment) {
-            ci.setTransfers([[28500, collectionAddr]]);
-          }
           ci.setPaymentAmount(28500);
-          // creator manager of arc200
           ci.setAccounts([
             "VIAGCPULN6FUTHUNPQZDRQIHBT7IUVT264B3XDXLZNX7OZCJP6MEF7JFQU", // tokenAddr
           ]);
           ci.setExtraTxns(customTxn);
           ci.setFee(13000);
+          ci.setEnableGroupResourceSharing(true);
+          ci.setBeaconId(ctcInfoMp206);
           const customR = await ci.custom();
 
           console.log({ customR });

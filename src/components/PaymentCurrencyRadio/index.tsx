@@ -30,7 +30,7 @@ const PaymentCurrencyRadio: React.FC<PaymentCurrencyRadioProps> = ({
         onChange={handleChange}
       >
         {[
-          { value: "0", label: "VIO" },
+          { value: "0", label: "VOI" },
           { value: "6779767", label: "VIA" },
         ].map((currency) => (
           <FormControlLabel
