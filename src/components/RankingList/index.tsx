@@ -272,11 +272,16 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                       }}
                     />
                     <AccountInfo>
-                      <AccountName className={isDarkTheme ? "dark" : "light"}>
-                        {filteredRankings[index]?.name
-                          ? filteredRankings[index].name
-                          : "Collection Name"}
-                      </AccountName>
+                      <Link
+                        style={{ textDecoration: "none" }}
+                        to={`/collection/${filteredRankings[index]?.collectionId}`}
+                      >
+                        <AccountName className={isDarkTheme ? "dark" : "light"}>
+                          {filteredRankings[index]?.name
+                            ? filteredRankings[index].name
+                            : "Collection Name"}
+                        </AccountName>
+                      </Link>
                       <AccountMetric>
                         <AccountMetricSubtext>Floor</AccountMetricSubtext>
                         <AccountMetricMaintext>

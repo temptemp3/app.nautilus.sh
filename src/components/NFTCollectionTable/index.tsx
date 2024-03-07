@@ -12,6 +12,7 @@ import { RootState } from "../../store/store";
 import styled from "styled-components";
 import { Box } from "@mui/material";
 import { RankingI } from "../../types";
+import { Link } from "react-router-dom";
 
 const StyledImage = styled(Box)`
   width: 53px;
@@ -66,7 +67,14 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
               <StyledTableCell>
                 <StyledImage sx={{ backgroundImage: `url(${player.image})` }} />
               </StyledTableCell>
-              <StyledTableCell>{player.name}</StyledTableCell>
+              <StyledTableCell>
+                <Link
+                  style={{ textDecoration: "none", color: "inherit" }}
+                  to={`/collection/${player.collectionId}`}
+                >
+                  {player.name}
+                </Link>
+              </StyledTableCell>
               <StyledTableCell>
                 {player.floorPrice === 0
                   ? "-"
