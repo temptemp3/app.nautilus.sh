@@ -20,7 +20,14 @@ export const routes = [
     path: "/account/:id",
     Component: Page.Account,
   },
-  
+  {
+    path: "/activity",
+    Component: Page.Activity,
+  },
+  {
+    path: "/listing",
+    Component: Page.Listings,
+  },
   {
     path: "/sandbox",
     Component: Page.Sandbox,

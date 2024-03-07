@@ -11,7 +11,7 @@ import Box from "@mui/material/Box";
 import Popper from "@mui/material/Popper";
 import Fade from "@mui/material/Fade";
 import { useWallet } from "@txnlab/use-wallet";
-import { Divider, Stack } from "@mui/material";
+import { Chip, Divider, Stack } from "@mui/material";
 
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
@@ -19,6 +19,12 @@ import { toast } from "react-toastify";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
+import { arc200 } from "ulujs";
+import { TOKEN_VIA } from "../../contants/tokens";
+import { getAlgorandClients } from "../../wallets";
+import { arc200_balanceOf } from "ulujs/types/arc200";
+import VOIIcon from "static/crypto-icons/voi/0.svg";
+import VIAIcon from "static/crypto-icons/voi/6779767.svg";
 
 const NavRoot = styled.nav`
   color: black;
@@ -116,14 +122,31 @@ const Navbar = () => {
     useWallet();
 
   const [accInfo, setAccInfo] = React.useState<any>(null);
+  const [balance, setBalance] = React.useState<any>(null);
 
-  console.log({ providers, activeAccount, connectedAccounts, accInfo });
-
+  // EFFECT: get voi balance
   useEffect(() => {
-    if (activeAccount) {
+    if (activeAccount && providers && providers.length >= 3) {
       getAccountInfo().then(setAccInfo);
     }
-  }, [activeAccount]);
+  }, [activeAccount, providers]);
+
+  // EFFECT: get voi balance
+  useEffect(() => {
+    if (activeAccount && providers && providers.length >= 3) {
+      const { algodClient, indexerClient } = getAlgorandClients();
+      const ci = new arc200(TOKEN_VIA, algodClient, indexerClient);
+      ci.arc200_balanceOf(activeAccount.address).then(
+        (arc200_balanceOfR: any) => {
+          if (arc200_balanceOfR.success) {
+            setBalance(Number(arc200_balanceOfR.returnValue));
+          }
+        }
+      );
+    }
+  }, [activeAccount, providers]);
+
+  console.log({ accInfo, balance });
 
   /* Theme */
 
@@ -296,6 +319,7 @@ const Navbar = () => {
               sx={{
                 color: isDarkTheme ? "rgb(113, 117, 121)" : undefined,
                 cursor: "pointer",
+                display: { xs: "none", md: "block" },
               }}
               onClick={() => {
                 const addrs = Array.from(
@@ -469,11 +493,7 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            <Stack
-              direction="row"
-              spacing={2}
-              sx={{ alignItems: "flex-start" }}
-            >
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               {accInfo ? (
                 <>
                   <div
@@ -481,19 +501,50 @@ const Navbar = () => {
                       color: isDarkTheme ? "#717579" : undefined,
                     }}
                   >
-                    {(
-                      (accInfo.amount - accInfo["min-balance"]) /
-                      1e6
-                    ).toLocaleString()}{" "}
-                    VOI
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        display: { xs: "none", sm: "flex" },
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
+                        sx={{
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <img src={VOIIcon} style={{ height: "12px" }} />
+                        <div>
+                          {(
+                            (accInfo.amount - accInfo["min-balance"]) /
+                            1e6
+                          ).toLocaleString()}{" "}
+                          VOI
+                        </div>
+                      </Stack>
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
+                        sx={{
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <img src={VIAIcon} style={{ height: "12px" }} />
+                        <div>{(balance / 1e6).toLocaleString()} VIA</div>
+                      </Stack>
+                    </Stack>
                   </div>
-                  <Divider
+                  {/*<Divider
                     orientation="vertical"
                     flexItem
                     sx={{
                       backgroundColor: isDarkTheme ? "#717579" : undefined,
                     }}
-                  />
+                  />*/}
                   <div
                     style={{
                       color: isDarkTheme ? "#717579" : undefined,
@@ -509,11 +560,25 @@ const Navbar = () => {
                   cursor: "pointer",
                 }}
               >
-                <AccountBalanceWalletOutlinedIcon
+                {activeAccount ? (
+                  <img
+                    style={{
+                      height: "29px",
+                      width: "29px",
+                      borderRadius: "29px",
+                    }}
+                    src={
+                      providers?.find(
+                        (el) => el.metadata.id === activeAccount.providerId
+                      )?.metadata.icon
+                    }
+                  />
+                ) : null}
+                {/*<AccountBalanceWalletOutlinedIcon
                   sx={{
                     color: isDarkTheme ? "#717579" : undefined,
                   }}
-                />
+                />*/}
               </div>
             </Stack>
           )}

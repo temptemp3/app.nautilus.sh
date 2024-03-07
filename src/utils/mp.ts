@@ -1,5 +1,7 @@
 //import { fee } from "../constants/mp";
 
+import { CollectionI, RankingI, Token } from "../types";
+
 export const computeExtraPayment = (
   price: any,
   royalties: any,
@@ -78,6 +80,7 @@ export const decodeTokenId = (price: any) => {
 };
 
 export const decodePrice = (price: any) => {
+  if (!price) return 0;
   const [pType, ...prc] = price;
   switch (pType) {
     case "00": {
@@ -86,8 +89,11 @@ export const decodePrice = (price: any) => {
     }
     case "01": {
       const [_, tidr, tprcr] = price;
-      const tprc = Number("0x" + tprcr.slice(0, tprcr.length - 4));
+      const tprc = Number("0x" + tprcr);
       return tprc;
+    }
+    default: {
+      return 0;
     }
   }
 };
@@ -130,3 +136,76 @@ export const decodePrice = (price: any) => {
 //     }
 //   }
 // };
+
+export const getRankings = (
+  tokens: Token[],
+  collections: CollectionI[],
+  sales: any,
+  listings: any
+) => {
+  const scores = new Map();
+  const saleCounts = new Map();
+  for (const sale of sales) {
+    if (scores.has(sale.collectionId)) {
+      scores.set(sale.collectionId, scores.get(sale.collectionId) + sale.price);
+      saleCounts.set(sale.collectionId, saleCounts.get(sale.collectionId) + 1);
+    } else {
+      scores.set(sale.collectionId, sale.price);
+      saleCounts.set(sale.collectionId, 1);
+    }
+  }
+  const floors = new Map();
+  for (const listing of listings) {
+    if (floors.has(listing.collectionId)) {
+      floors.set(
+        listing.collectionId,
+        Math.min(floors.get(listing.collectionId), listing.price)
+      );
+    } else {
+      floors.set(listing.collectionId, listing.price);
+    }
+  }
+  const rankings = Array.from(scores.entries()).map((kv: any) => {
+    const collection: CollectionI =
+      collections.find((c: any) => `${c.contractId}` === `${kv[0]}`) ||
+      ({} as CollectionI);
+    const token: Token =
+      tokens.find(
+        (t: any) => `${t.contractId}` === `${kv[0]}` && `${t.tokenId}` === "1"
+      ) || ({} as Token);
+    const collectionTokens = tokens.filter(
+      (t: any) => `${t.contractId}` === `${kv[0]}`
+    );
+    const saleCount = saleCounts.get(kv[0]) || 0;
+    const owners = new Set();
+    for (const token of collectionTokens) {
+      owners.add(token.owner);
+    }
+    const floorPrice = floors.get(kv[0]) || 0;
+    const volume = kv[1];
+    return {
+      collectionId: kv[0],
+      image: token?.metadata?.image,
+      floorPrice,
+      volume,
+      name: `${token?.metadata?.name?.replace(/[0-9]*$/, " ")}`,
+      score: `${(volume / 1e6).toLocaleString()}`,
+      rank: volume,
+      scoreUnit: "VOI",
+      owners: owners.size,
+      items: collection?.totalSupply || 0,
+      sales: saleCount,
+    };
+  });
+  rankings.sort((a: RankingI, b: RankingI) => {
+    if (b.rank === a.rank) {
+      return b.volume - a.volume;
+    } else {
+      return b.rank - a.rank;
+    }
+  });
+  return rankings;
+};
+
+export const compactAddress = (address: string) =>
+  `${address.slice(0, 4)}...${address.slice(-4)}`;

@@ -1,14 +1,58 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
-import { Container, Grid, Typography } from "@mui/material";
+import { Container, Grid, Stack, Typography } from "@mui/material";
 import NFTCard from "../../components/NFTCard";
 import Section from "../../components/Section";
 import { nfts } from "../../static/json/nfts";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
 import styled from "styled-components";
+import { getTokens } from "../../store/tokenSlice";
+import { UnknownAction } from "@reduxjs/toolkit";
+import { getCollections } from "../../store/collectionSlice";
+import { getSales } from "../../store/saleSlice";
+import { getRankings } from "../../utils/mp";
+import NFTCollectionTable from "../../components/NFTCollectionTable";
+
+const SectionHeading = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 45px;
+  gap: 10px;
+  & h2.dark {
+    color: #fff;
+  }
+  & h2.light {
+    color: #93f;
+  }
+`;
+
+const SectionDescription = styled.div`
+  flex: 1 0 0;
+  color: #93f;
+  font-family: "Advent Pro";
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px; /* 120% */
+  letter-spacing: 0.2px;
+`;
+
+const SectionTitle = styled.h2`
+  /*color: #93f;*/
+  text-align: center;
+  leading-trim: both;
+  text-edge: cap;
+  font-feature-settings: "clig" off, "liga" off;
+  font-family: Nohemi;
+  font-size: 40px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 100%; /* 40px */
+`;
 
 const ExternalLinks = styled.ul`
   & li {
@@ -25,120 +69,90 @@ const StyledLink = styled(Link)`
 `;
 
 export const Collections: React.FC = () => {
-  const navigate = useNavigate();
+  /* Dispatch */
+  const dispatch = useDispatch();
+  /* Tokens */
+  const tokens = useSelector((state: any) => state.tokens.tokens);
+  const tokenStatus = useSelector((state: any) => state.tokens.status);
+  useEffect(() => {
+    dispatch(getTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+
+  /* Collections */
+  const collections = useSelector(
+    (state: any) => state.collections.collections
+  );
+  const collectionStatus = useSelector(
+    (state: any) => state.collections.status
+  );
+  useEffect(() => {
+    dispatch(getCollections() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Sales */
+  const sales = useSelector((state: any) => state.sales.sales);
+  const salesStatus = useSelector((state: any) => state.sales.status);
+  useEffect(() => {
+    dispatch(getSales() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
 
-  /* NFT Navigator */
-  const [collections, setCollections] = React.useState<any>([]);
+  /* NFT Navigator Listings */
+  const [listings, setListings] = React.useState<any>(null);
   React.useEffect(() => {
     try {
-      (async () => {
-        const {
-          data: { collections: res },
-        } = await axios.get(
-          "https://arc72-idx.voirewards.com/nft-indexer/v1/collections"
-        );
-        const collections = [];
-        for (const c of res) {
-          const t = c.firstToken;
-          if (!!t) {
-            const tm = JSON.parse(t.metadata);
-            collections.push({
-              ...t,
-              metadata: tm,
-            });
-          }
-        }
-        setCollections(collections);
-      })();
+      const res = axios
+        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
+          params: {
+            active: true,
+          },
+        })
+        .then(({ data }) => {
+          setListings(data.listings);
+        });
     } catch (e) {
       console.log(e);
     }
   }, []);
-  console.log({ collections });
-  return (
+
+  const rankings: any = useMemo(() => {
+    if (
+      !tokens ||
+      !sales ||
+      !listings ||
+      tokenStatus !== "succeeded" ||
+      salesStatus !== "succeeded" ||
+      collectionStatus !== "succeeded"
+    )
+      return new Map();
+    return getRankings(tokens, collections, sales, listings);
+  }, [sales, tokens, collections, listings]);
+
+  console.log({ rankings, sales, tokens, collections, listings });
+
+  const isLoading = useMemo(
+    () =>
+      !listings ||
+      !rankings ||
+      tokenStatus !== "succeeded" ||
+      collectionStatus !== "succeeded" ||
+      salesStatus !== "succeeded",
+    [tokens, listings, rankings, tokenStatus, collectionStatus, salesStatus]
+  );
+
+  return !isLoading ? (
     <Layout>
       <Container maxWidth="xl">
-        <Section title={`Collections ${collections.length}`}>
-          <Grid container spacing={2}>
-            {collections.reverse().map((el: any, i: number) => {
-              return (
-                <Grid
-                  key={i}
-                  item
-                  xs={6}
-                  sm={4}
-                  md={3}
-                  lg={2}
-                  sx={{ overflow: "hidden" }}
-                >
-                  <img
-                    style={{
-                      width: "100%",
-                      objectFit: "cover",
-                      cursor: "pointer",
-                      borderRadius: 10,
-                    }}
-                    src={el.metadata.image}
-                    alt={el.metadata.name}
-                    onClick={() => {
-                      navigate(`/collection/${el.contractId}`);
-                    }}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Section>
-        <Typography
-          sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
-          variant="h6"
-        >
-          External Links
-        </Typography>
-        <ExternalLinks
-          style={{
-            listStyle: "none",
-          }}
-        >
-          <li>
-            <StyledLink
-              target="_blank"
-              to={`https://nftnavigator.xyz/`}
-              style={{ color: isDarkTheme ? "#fff" : "#000" }}
-            >
-              <img
-                src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
-                style={{
-                  height: "24px",
-                  width: "24px",
-                  borderRadius: "5px",
-                }}
-              />{" "}
-              NFT Navigator
-            </StyledLink>
-          </li>
-          <li>
-            <StyledLink
-              target="_blank"
-              to="https://highforge.io/explore"
-              style={{ color: isDarkTheme ? "#fff" : "#000" }}
-            >
-              <img
-                src="https://highforge.io/apple-touch-icon.png"
-                style={{
-                  height: "24px",
-                  width: "24px",
-                  borderRadius: "5px",
-                }}
-              />{" "}
-              High Forge
-            </StyledLink>
-          </li>
-        </ExternalLinks>
+        <SectionHeading>
+          <SectionTitle className={isDarkTheme ? "dark" : "light"}>
+            Collections
+          </SectionTitle>
+          <SectionDescription>// {rankings.length} results</SectionDescription>
+        </SectionHeading>
+        <NFTCollectionTable rankings={rankings} />
       </Container>
     </Layout>
-  );
+  ) : null;
 };

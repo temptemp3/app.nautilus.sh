@@ -1,7 +1,9 @@
 import React from "react";
 import styled from "styled-components";
-import { Avatar } from "@mui/material";
+import { Avatar, Tooltip } from "@mui/material";
 import { stringToColorCode } from "../../utils/string";
+import VoiIcon from "../../static/crypto-icons/voi/0.svg";
+import ViaIcon from "../../static/crypto-icons/voi/6779767.svg";
 
 const NFTCardWrapper = styled.div`
   align-items: center;
@@ -28,6 +30,7 @@ const NFTCardWrapper = styled.div`
     //height: 305px;
     position: relative;
     width: 100%;
+    height: 200px;
   }
 
   & .NFT-info {
@@ -35,7 +38,7 @@ const NFTCardWrapper = styled.div`
     align-items: flex-start;
     align-self: stretch;
     backdrop-filter: blur(200px) brightness(100%);
-    background-color: #20202066;
+    /*background-color: #20202066;*/
     border-radius: 0px 0px 16px 16px;
     display: flex;
     flex-direction: column;
@@ -44,6 +47,7 @@ const NFTCardWrapper = styled.div`
     padding: 20px 30px 25px;
     position: relative;
     width: 100%;
+    height: 150px;
   }
 
   & .frame {
@@ -183,13 +187,16 @@ const NFTCardWrapper = styled.div`
   }
 
   & .text-wrapper-4 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     align-self: stretch;
     color: white;
     position: relative;
     font-family: monospace;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
-    line-height: 22px;
+    line-height: 20px;
     letter-spacing: 0em;
     text-align: left;
   }
@@ -200,6 +207,7 @@ interface NFTCardProps {
   image: string;
   owner: string;
   price: string;
+  currency: string;
   onClick: any;
 }
 
@@ -208,6 +216,7 @@ const NftCard: React.FC<NFTCardProps> = ({
   image,
   owner,
   price,
+  currency,
   onClick,
 }) => {
   return (
@@ -236,7 +245,38 @@ const NftCard: React.FC<NFTCardProps> = ({
         <div className="additional-info">
           <div className="price">
             <div className="text-wrapper-3">Price</div>
-            <div className="text-wrapper-4">{price}</div>
+            <div className="text-wrapper-4">
+              <div style={{ display: "inline-block" }}>
+                {currency === "VOI" ? (
+                  <Tooltip placement="top" title="VOI">
+                    <img
+                      src={VoiIcon}
+                      alt="VOI"
+                      style={{
+                        height: "20px",
+                        width: "20px",
+                        position: "relative",
+                      }}
+                    />
+                  </Tooltip>
+                ) : null}
+                {currency === "VIA" ? (
+                  <Tooltip placement="top" title="VIA">
+                    <img
+                      src={ViaIcon}
+                      alt="VIA"
+                      style={{
+                        height: "20px",
+                        width: "20px",
+                        position: "relative",
+                      }}
+                    />
+                  </Tooltip>
+                ) : null}
+              </div>
+              <div style={{ display: "inline-block" }}>{price}</div>
+              <div style={{ display: "inline-block" }}>{currency}</div>
+            </div>
           </div>
         </div>
       </div>

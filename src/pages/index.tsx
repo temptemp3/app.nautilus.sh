@@ -4,3 +4,5 @@ export { Collections } from "./Collections";
 export { Collection } from "./Collection";
 export { Token } from "./Token";
 export { Account } from "./Account";
+export { Activity } from "./Activity";
+export { Listings } from "./Listings";

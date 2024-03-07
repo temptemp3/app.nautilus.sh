@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
 import {
   Avatar,
+  Box,
   Button,
   ButtonGroup,
   Chip,
@@ -9,6 +10,8 @@ import {
   Grid,
   Stack,
   Tabs,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import NFTCard from "../../components/NFTCard";
@@ -26,19 +29,26 @@ import { toast } from "react-toastify";
 import { useWallet } from "@txnlab/use-wallet";
 import SendIcon from "@mui/icons-material/Send";
 import { getAlgorandClients } from "../../wallets";
-import { arc72, CONTRACT, abi } from "ulujs";
+import { arc72, CONTRACT, abi, arc200 } from "ulujs";
 import TransferModal from "../../components/modals/TransferModal";
 import ListSaleModal from "../../components/modals/ListSaleModal";
 import algosdk from "algosdk";
 import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
-import { MarketplaceContext } from "../../store/MarketplaceContext";
+//import { MarketplaceContext } from "../../store/MarketplaceContext";
 import { decodeRoyalties } from "../../utils/hf";
+import NFTListingTable from "../../components/NFTListingTable";
+import { Token } from "../../types";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import GridViewIcon from "@mui/icons-material/GridView";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const { algodClient, indexerClient } = getAlgorandClients();
 
 const ExternalLinks = styled.ul`
   & li {
-    margin-top: 10px;
+    Number(margin-top: 10px;
   }
 `;
 
@@ -70,16 +80,17 @@ const AccountValue = styled.div`
 `;
 
 export const Account: React.FC = () => {
-  const { forSale } = useContext(MarketplaceContext);
-
   /* Router */
 
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const idArr = id?.indexOf(",") !== -1 ? id?.split(",") || [] : [id];
+
   /* Selection */
   const [selected, setSelected] = React.useState(-1);
-  const [selected2, setSelected2] = React.useState(-1);
+  const [selected2, setSelected2] = React.useState<string>("");
+  const [viewMode, setViewMode] = React.useState<"grid" | "list">("list");
 
   /* Wallet */
   const {
@@ -89,42 +100,6 @@ export const Account: React.FC = () => {
     signTransactions,
     sendTransactions,
   } = useWallet();
-
-  const listed = useMemo(() => {
-    return forSale?.filter((el: any) => el.lAddr === activeAccount?.address);
-  }, [forSale, activeAccount]);
-
-  // useEffect(() => {
-  //   if (selected === -1 || !activeAccount) return;
-  //   (async () => {
-  //     const nft = nfts[selected];
-  //     const arc72_ownerOf = nft.owner;
-  //     if (arc72_ownerOf === activeAccount?.address) {
-  //       // do nothing
-  //     } else if (
-  //       !!connectedAccounts.find(
-  //         (a) =>
-  //           a.address === arc72_ownerOf &&
-  //           activeAccount?.providerId === a.providerId
-  //       )
-  //     ) {
-  //       // switch active account
-  //       const provider = providers?.find(
-  //         (a) => a.metadata.id === activeAccount?.providerId
-  //       );
-  //       provider?.setActiveAccount(arc72_ownerOf);
-  //     } else {
-  //       const account = connectedAccounts.find(
-  //         (a) => a.address === arc72_ownerOf
-  //       );
-  //       const provider = providers?.find(
-  //         (a) => a.metadata.id === account?.providerId
-  //       );
-  //       provider?.setActiveProvider();
-  //       provider?.setActiveAccount(arc72_ownerOf);
-  //     }
-  //   })();
-  // }, [selected, activeAccount]);
 
   /* Copy to clipboard */
 
@@ -146,47 +121,144 @@ export const Account: React.FC = () => {
     (state: RootState) => state.theme.isDarkTheme
   );
 
-  /* NFTs */
+  /* NFT Navigator Listings */
+  const [listings, setListings] = React.useState<any>(null);
+  React.useEffect(() => {
+    try {
+      const res = axios
+        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
+          params: {
+            active: true,
+            seller: idArr,
+          },
+        })
+        .then(({ data }) => {
+          setListings(data.listings);
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
 
-  const [nfts, setNfts] = React.useState<any>([]);
-  console.log({ nfts });
+  /* NFT Navigator Collections */
+  const [collections, setCollections] = React.useState<any>(null);
   React.useEffect(() => {
     try {
       (async () => {
-        const ids = String(id).split(",");
-        if (!ids) {
-          return;
+        const {
+          data: { collections: res },
+        } = await axios.get(
+          "https://arc72-idx.voirewards.com/nft-indexer/v1/collections"
+        );
+        const collections = [];
+        for (const c of res) {
+          const t = c.firstToken;
+          if (!!t) {
+            const tm = JSON.parse(t.metadata);
+            collections.push({
+              ...c,
+              firstToken: {
+                ...t,
+                metadata: tm,
+              },
+            });
+          }
         }
-        const query = ids.map((id) => `owner[]=${id}`).join("&");
+        setCollections(collections);
+      })();
+    } catch (e) {
+      console.log(e);
+    }
+  }, [listings]);
+
+  /* NFT Navigator NFTs */
+  const [nfts, setNfts] = React.useState<Token[]>([] as Token[]);
+  React.useEffect(() => {
+    try {
+      (async () => {
         const {
           data: { tokens: res },
         } = await axios.get(
-          `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens?${query}`
+          `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens`,
+          {
+            params: {
+              owner: idArr,
+            },
+          }
         );
         const nfts = [];
         for (const t of res) {
           const tm = JSON.parse(t.metadata);
-          const royalties = tm.royalties
-            ? decodeRoyalties(tm.royalties)
-            : undefined;
+          const royalties = decodeRoyalties(tm.royalties);
           nfts.push({
             ...t,
             metadata: tm,
             royalties,
           });
         }
-        nfts.sort((a, b) => {
-          return a.contractId !== b.contractId
-            ? b.contractId - a.contractId
-            : a.tokenId - b.tokenId;
-        });
         setNfts(nfts);
       })();
     } catch (e) {
       console.log(e);
     }
-  }, [id]);
-  console.log({ nfts });
+  }, []);
+
+  const listedNfts = useMemo(() => {
+    const listedNfts =
+      nfts
+        ?.filter((nft: any) => {
+          return listings?.some(
+            (listing: any) =>
+              `${listing.collectionId}` === `${nft.contractId}` &&
+              `${listing.tokenId}` === `${nft.tokenId}`
+          );
+        })
+        ?.map((nft: any) => {
+          const listing = listings.find(
+            (l: any) =>
+              `${l.collectionId}` === `${nft.contractId}` &&
+              `${l.tokenId}` === `${nft.tokenId}`
+          );
+          return {
+            ...nft,
+            listing,
+          };
+        }) || [];
+    listedNfts.sort(
+      (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
+    );
+    return listedNfts;
+  }, [nfts, listings]);
+
+  const listedCollections = useMemo(() => {
+    const listedCollections =
+      collections
+        ?.filter((c: any) => {
+          return listedNfts?.some(
+            (nft: any) => `${nft.contractId}` === `${c.contractId}`
+          );
+        })
+        ?.map((c: any) => {
+          return {
+            ...c,
+            tokens: listedNfts?.filter(
+              (nft: any) => `${nft.contractId}` === `${c.contractId}`
+            ),
+          };
+        }) || [];
+    listedCollections.sort(
+      (a: any, b: any) =>
+        b.tokens[0].listing.createTimestamp -
+        a.tokens[0].listing.createTimestamp
+    );
+    return listedCollections;
+  }, [collections, listedNfts]);
+
+  const isLoading = useMemo(
+    () =>
+      !collections || !nfts || !listings || !listedNfts || !listedCollections,
+    [collections, nfts, listings, listedNfts, listedCollections]
+  );
 
   /* Transaction */
 
@@ -197,13 +269,25 @@ export const Account: React.FC = () => {
 
   const [activeTab, setActiveTab] = React.useState(0);
 
-  const nft = useMemo(() => {
-    const nft = nfts[selected];
-    console.log({ nft });
-    return nft;
+  const [nft, setNft] = React.useState<any>(null);
+  useEffect(() => {
+    if (selected === -1) return;
+    const nft: Token = nfts[selected];
+    const royalties = decodeRoyalties(nft.metadata.royalties);
+    setNft({
+      ...nft,
+      royalties,
+    });
   }, [nfts, selected]);
 
   const handleListSale = async (price: string, currency: string) => {
+    const listedNft = nft?.listing
+      ? nft
+      : listedNfts.find(
+          (el: any) =>
+            el.contractId === nfts[selected].contractId &&
+            el.tokenId === nfts[selected].tokenId
+        );
     const priceN = Number(price);
     const currencyN = Number(currency);
     try {
@@ -218,7 +302,12 @@ export const Account: React.FC = () => {
       }
       setIsListing(true);
 
-      const { contractId, tokenId } = nft;
+      const contractId = nft?.contractId || 0;
+      const tokenId = nft?.tokenId || 0;
+
+      if (!contractId || !tokenId) {
+        throw new Error("Invalid contractId or tokenId");
+      }
 
       const ciArc72 = new arc72(contractId, algodClient, indexerClient, {
         acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
@@ -230,6 +319,19 @@ export const Account: React.FC = () => {
       const arc72_ownerOf = arc72_ownerOfR.returnValue;
 
       const builder = {
+        arc200: new CONTRACT(
+          currencyN,
+          algodClient,
+          indexerClient,
+          abi.arc200,
+          {
+            addr: activeAccount?.address || "",
+            sk: new Uint8Array(0),
+          },
+          true,
+          false,
+          true
+        ),
         arc72: new CONTRACT(
           contractId,
           algodClient,
@@ -251,6 +353,19 @@ export const Account: React.FC = () => {
             name: "mp",
             desc: "mp",
             methods: [
+              // a_sale_deleteListing(ListingId)
+              {
+                name: "a_sale_deleteListing",
+                args: [
+                  {
+                    type: "uint256",
+                    name: "listingId",
+                  },
+                ],
+                returns: {
+                  type: "void",
+                },
+              },
               // a_sale_listNet(CollectionId, TokenId, ListPrice, EndTime, RoyaltyPoints, CreatePoints1, CreatorPoint2, CreatorPoint3, CreatorAddr1, CreatorAddr2, CreatorAddr3)ListId
               {
                 name: "a_sale_listNet",
@@ -372,6 +487,7 @@ export const Account: React.FC = () => {
           true
         ),
       };
+      const ciArc200 = new arc200(currencyN, algodClient, indexerClient);
       const ci = new CONTRACT(
         ctcInfoMp206,
         algodClient,
@@ -398,30 +514,34 @@ export const Account: React.FC = () => {
       // VOI Sale
       if (currencyN === 0) {
         const customPaymentAmount = [ListingBoxCost];
-        const customTxns = (
-          await Promise.all([
-            builder.mp.a_sale_listNet(
-              contractId, // CollectionId
-              tokenId, // TokenId
-              priceN * 1e6, // ListPrice
-              Number.MAX_SAFE_INTEGER, // EndTime
-              Math.min(nft?.royalties?.royaltyPoints || 0, 9500), // RoyaltyPoints
-              nft?.royalties?.creator1Points || 0, // CreatePoints1
-              nft?.royalties?.creator2Points || 0, // CreatePoints1
-              nft?.royalties?.creator3Points || 0, // CreatePoints1
-              nft?.royalties?.creator1Address ||
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
-              nft?.royalties?.creator2Address ||
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
-              nft?.royalties?.creator3Address ||
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" // CreatePoints1
-            ),
-            builder.arc72.arc72_approve(
-              algosdk.getApplicationAddress(ctcInfoMp206), // Address
-              tokenId // TokenId
-            ),
-          ])
-        ).map(({ obj }) => obj);
+        const buildP = [
+          builder.mp.a_sale_listNet(
+            contractId, // CollectionId
+            tokenId, // TokenId
+            priceN * 1e6, // ListPrice
+            Number.MAX_SAFE_INTEGER, // EndTime
+            Math.min(nft?.royalties?.royaltyPoints || 0, 9500), // RoyaltyPoints
+            nft?.royalties?.creator1Points || 0, // CreatePoints1
+            nft?.royalties?.creator2Points || 0, // CreatePoints1
+            nft?.royalties?.creator3Points || 0, // CreatePoints1
+            nft?.royalties?.creator1Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator2Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator3Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" // CreatePoints1
+          ),
+          builder.arc72.arc72_approve(
+            algosdk.getApplicationAddress(ctcInfoMp206), // Address
+            tokenId // TokenId
+          ),
+        ];
+        if (listedNft) {
+          buildP.push(
+            builder.mp.a_sale_deleteListing(listedNft.listing.mpListingId)
+          );
+        }
+        const customTxns = (await Promise.all(buildP)).map(({ obj }) => obj);
         ci.setAccounts([
           "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // mp206 D
         ]);
@@ -430,52 +550,10 @@ export const Account: React.FC = () => {
           customPaymentAmount.reduce((acc, val) => acc + val, 0)
         );
         ci.setExtraTxns(customTxns);
-        const customR = await ci.custom();
-        if (!customR.success) {
-          throw new Error("failed in simulate");
+        if (contractId === 29088600) {
+          ci.setOptins([29103397]);
         }
-        await signTransactions(
-          customR.txns.map(
-            (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
-          )
-        ).then(sendTransactions);
-      } else {
-        const customPaymentAmount = [ListingBoxCost];
-        const customTxns = (
-          await Promise.all([
-            builder.mp.a_sale_listSC(
-              contractId,
-              tokenId,
-              currencyN,
-              priceN * 1e6,
-              Number.MAX_SAFE_INTEGER,
-              Math.min(nft?.royalties?.royaltyPoints || 0, 9500), // RoyaltyPoints
-              nft?.royalties?.creator1Points || 0, // CreatePoints1
-              nft?.royalties?.creator2Points || 0, // CreatePoints1
-              nft?.royalties?.creator3Points || 0, // CreatePoints1
-              nft?.royalties?.creator1Address ||
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
-              nft?.royalties?.creator2Address ||
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
-              nft?.royalties?.creator3Address ||
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" // CreatePoints1
-            ),
-            builder.arc72.arc72_approve(
-              algosdk.getApplicationAddress(ctcInfoMp206),
-              tokenId
-            ),
-          ])
-        ).map(({ obj }) => obj);
-        ci.setAccounts([
-          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
-        ]);
-        ci.setFee(2000);
-        ci.setExtraTxns(customTxns);
-        ci.setPaymentAmount(
-          customPaymentAmount.reduce((acc, val) => acc + val, 0)
-        );
         const customR = await ci.custom();
-        console.log(customR);
         if (!customR.success) {
           throw new Error("failed in simulate");
         }
@@ -485,7 +563,181 @@ export const Account: React.FC = () => {
           )
         ).then(sendTransactions);
       }
-      toast("List successful!");
+      // VIA Sale
+      else {
+        // ------------------------------------------d
+        // Setup recipient accounts
+        // ------------------------------------------d
+        do {
+          const ciMp = new CONTRACT(
+            ctcInfoMp206,
+            algodClient,
+            indexerClient,
+            {
+              name: "",
+              desc: "",
+              methods: [
+                {
+                  name: "manager",
+                  args: [],
+                  returns: {
+                    type: "address",
+                  },
+                },
+              ],
+              events: [],
+            },
+            {
+              addr: activeAccount?.address || "",
+              sk: new Uint8Array(0),
+            }
+          );
+          const ci = new CONTRACT(
+            currencyN,
+            algodClient,
+            indexerClient,
+            {
+              name: "",
+              desc: "",
+              methods: [
+                {
+                  name: "custom",
+                  args: [],
+                  returns: {
+                    type: "void",
+                  },
+                },
+              ],
+              events: [],
+            },
+            {
+              addr: arc72_ownerOf,
+              sk: new Uint8Array(0),
+            }
+          );
+          const managerR = await ciMp.manager();
+          if (!managerR.success) {
+            throw new Error("manager failed in simulate");
+          }
+          const manager = managerR.returnValue;
+          const candidates = [
+            manager,
+            activeAccount?.address || "",
+            nft?.royalties?.creator1Address,
+            nft?.royalties?.creator2Address,
+            nft?.royalties?.creator3Address,
+          ];
+          const addrs = [];
+          for (const addr of candidates) {
+            const hasBalanceR = await ciArc200.hasBalance(addr);
+            console.log({ addr, hasBalanceR });
+
+            if (!hasBalanceR.success) {
+              throw new Error("hasBalance failed in simulate");
+            }
+            const hasBalance = hasBalanceR.returnValue;
+            if (hasBalance === 0) {
+              addrs.push(addr);
+            }
+          }
+          const uniqAddrs = Array.from(new Set(addrs));
+          if (uniqAddrs.length === 0) {
+            break;
+          }
+          for (let i = 0; i < uniqAddrs.length; i++) {
+            const addr = uniqAddrs[i];
+            const buildP = [addr].map((addr) =>
+              builder.arc200.arc200_transfer(addr, 0)
+            );
+            const customTxns = (await Promise.all(buildP)).map(
+              ({ obj }) => obj
+            );
+            ci.setFee(1000);
+            ci.setPaymentAmount(28500);
+            ci.setExtraTxns(customTxns);
+            const customR = await ci.custom();
+            if (!customR.success) {
+              throw new Error("failed in simulate");
+            }
+            await toast.promise(
+              signTransactions(
+                customR.txns.map(
+                  (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+                )
+              ).then(sendTransactions),
+              {
+                pending: `Transaction signature pending setup recipient account (${
+                  i + 1
+                }/${uniqAddrs.length})`,
+                success: "Recipient account setup successful",
+                error: "Recipient account setup failed",
+              }
+            );
+          }
+        } while (0);
+        // ------------------------------------------d
+
+        const customPaymentAmount = [ListingBoxCost];
+        const buildP = [
+          builder.mp.a_sale_listSC(
+            contractId,
+            tokenId,
+            currencyN,
+            priceN * 1e6,
+            Number.MAX_SAFE_INTEGER,
+            Math.min(nft?.royalties?.royaltyPoints || 0, 9500), // RoyaltyPoints
+            nft?.royalties?.creator1Points || 0, // CreatePoints1
+            nft?.royalties?.creator2Points || 0, // CreatePoints1
+            nft?.royalties?.creator3Points || 0, // CreatePoints1
+            nft?.royalties?.creator1Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator2Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator3Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" // CreatePoints1
+          ),
+          builder.arc72.arc72_approve(
+            algosdk.getApplicationAddress(ctcInfoMp206),
+            tokenId
+          ),
+        ];
+        if (listedNft) {
+          buildP.push(
+            builder.mp.a_sale_deleteListing(listedNft.listing.mpListingId)
+          );
+        }
+        const customTxns = (await Promise.all(buildP)).map(({ obj }) => obj);
+        ci.setAccounts([
+          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
+        ]);
+        ci.setFee(2000);
+        ci.setExtraTxns(customTxns);
+        if (contractId === 29088600) {
+          ci.setOptins([29103397]);
+        }
+        ci.setPaymentAmount(
+          customPaymentAmount.reduce((acc, val) => acc + val, 0)
+        );
+        const customR = await ci.custom();
+        if (!customR.success) {
+          throw new Error("failed in simulate");
+        }
+        await toast.promise(
+          signTransactions(
+            customR.txns.map(
+              (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+            )
+          ).then(sendTransactions),
+          {
+            pending: `Transaction signature pending... ${((str) =>
+              str[0].toUpperCase() + str.slice(1))(
+              activeAccount.providerId
+            )} will prompt you to sign the transaction.`,
+            success: "List successful!",
+            error: "List failed",
+          }
+        );
+      }
     } catch (e: any) {
       console.log(e);
       toast.error(e.message);
@@ -540,9 +792,10 @@ export const Account: React.FC = () => {
       console.log(e);
       toast.error(e.message);
     } finally {
-      setSelected2(-1);
+      setSelected2("");
     }
   };
+
   const handleTransfer = async (addr: string, amount: string) => {
     try {
       const amountN = Number(amount);
@@ -639,7 +892,7 @@ export const Account: React.FC = () => {
       const res = await signTransactions(
         txns.map((txn: string) => new Uint8Array(Buffer.from(txn, "base64")))
       ).then(sendTransactions);
-      toast.success(`NFT Transfer successful!`);
+      toast.success(`NFT Transfer successful! Page will reload momentarily.`);
       if (connectedAccounts.map((a) => a.address).includes(addr)) {
         setNfts([
           ...nfts.slice(0, selected),
@@ -649,6 +902,9 @@ export const Account: React.FC = () => {
       } else {
         setNfts([...nfts.slice(0, selected), ...nfts.slice(selected + 1)]);
       }
+      setTimeout(() => {
+        window.location.reload();
+      }, 4000);
     } catch (e: any) {
       console.log(e);
       toast.error(e.message);
@@ -659,7 +915,16 @@ export const Account: React.FC = () => {
     }
   };
 
-  return (
+  console.log({
+    nfts,
+    listedNfts,
+    listedCollections,
+    collections,
+    isLoading,
+    nft,
+  });
+
+  return !isLoading ? (
     <Layout>
       <Container
         maxWidth="xl"
@@ -686,10 +951,6 @@ export const Account: React.FC = () => {
                   gap={0.1}
                   sx={{
                     p: 1,
-                    // background:
-                    //   selected >= 0 && nfts[selected]?.owner === id
-                    //     ? "rgba(139, 44, 195, 0.1)"
-                    //     : undefined,
                   }}
                 >
                   <AccountLabel>Account</AccountLabel>
@@ -720,10 +981,10 @@ export const Account: React.FC = () => {
             </Button>
           ))}
         </ButtonGroup>
-        {activeTab === 0 ? (
+        {activeTab === 0 && nfts ? (
           <>
             <Typography variant="h4" sx={{ mt: 3 }}>
-              Collected <small>{nfts.length}</small>
+              Collected <small>{nfts?.length}</small>
             </Typography>
             <Stack
               sx={{
@@ -749,40 +1010,47 @@ export const Account: React.FC = () => {
                     <Button
                       size="large"
                       variant="outlined"
-                      onClick={() => setOpenListSale(true)}
+                      onClick={async () => {
+                        try {
+                          // get account available balance
+                          const accInfo = await algodClient
+                            .accountInformation(activeAccount?.address || "")
+                            .do();
+                          const availableBalance =
+                            accInfo.amount - accInfo["min-balance"];
+                          // check that available balance is greater than or equal to 0.1235
+                          if (availableBalance < 123500) {
+                            throw new Error(
+                              `Insufficient balance (${
+                                (availableBalance - 123500) / 1e6
+                              } VOI). Please fund your account.`
+                            );
+                          }
+
+                          setOpenListSale(true);
+                        } catch (e: any) {
+                          console.log(e);
+                          toast.error(e.message);
+                        }
+                      }}
                     >
                       List For Sale
                     </Button>
                     <Button
                       size="large"
                       variant="outlined"
-                      onClick={async () => {
-                        const ci = new arc72(
-                          nfts[selected].contractId,
-                          algodClient,
-                          indexerClient,
-                          {
-                            acc: {
-                              addr: activeAccount?.address || "",
-                              sk: new Uint8Array(0),
-                            },
-                          }
-                        );
-                        const arc72_ownerOfR = await ci.arc72_ownerOf(
-                          nfts[selected].tokenId
-                        );
-                        console.log({ arc72_ownerOfR });
+                      onClick={() => {
                         setOpen(true);
                       }}
                     >
                       Transfer
                     </Button>
-                    <Link
+                    {/*<Link
                       to={`https://nftnavigator.xyz/collection/${nfts[selected].contractId}/token/${nfts[selected].tokenId}`}
                       target="_blank"
                     >
                       <Button size="large">View in NFT Navigator</Button>
-                    </Link>
+                    </Link>*/}
                     <Button
                       onClick={() => {
                         setSelected(-1);
@@ -794,133 +1062,233 @@ export const Account: React.FC = () => {
                 </>
               ) : null}
             </Stack>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              {nfts.map((nft: any, index: number) => {
-                return (
-                  <Grid item xs={6} sm={4} md={3} lg={2} key={nft.id}>
-                    <img
-                      style={{
-                        width: "100%",
-                        cursor: "pointer",
-                        borderRadius: 10,
-                        border:
-                          selected === index
-                            ? "5px solid rgb(139, 44, 195)"
-                            : isDarkTheme
-                            ? "5px solid rgb(22, 23, 23)"
-                            : "5px solid #fff",
-                      }}
-                      src={nft.metadata.image}
-                      alt={nft.metadata.name}
-                      onClick={() => {
-                        if (id?.indexOf(activeAccount?.address || "") !== -1) {
-                          if (selected === index) {
-                            setSelected(-1);
+            {nfts ? (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                {nfts?.map((nft: any, index: number) => {
+                  return (
+                    <Grid
+                      item
+                      xs={6}
+                      sm={4}
+                      md={3}
+                      lg={2}
+                      key={`${nft.contractId}-${nft.tokenId}`}
+                    >
+                      <img
+                        style={{
+                          width: "100%",
+                          cursor: "pointer",
+                          borderRadius: 10,
+                          border:
+                            selected === index
+                              ? "5px solid rgb(139, 44, 195)"
+                              : isDarkTheme
+                              ? "5px solid rgb(22, 23, 23)"
+                              : "5px solid #fff",
+                        }}
+                        src={nft.metadata.image}
+                        alt={nft.metadata.name}
+                        onClick={() => {
+                          if (idArr.includes(activeAccount?.address || "")) {
+                            if (selected === index) {
+                              setSelected(-1);
+                            } else {
+                              setSelected(index);
+                            }
                           } else {
-                            setSelected(index);
+                            navigate(
+                              `/collection/${nft.contractId}/token/${nft.tokenId}`
+                            );
                           }
-                        } else {
-                          navigate(
-                            `/collection/${nft.contractId}/token/${nft.tokenId}`
-                          );
-                        }
-                      }}
-                    />
-                  </Grid>
-                );
-              })}
-            </Grid>
+                        }}
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            ) : null}
           </>
         ) : null}
         {activeTab === 1 ? (
           <>
-            <Typography variant="h4" sx={{ mt: 3 }}>
-              Listed <small>{listed.length}</small>
-            </Typography>
             <Stack
-              sx={{
-                mt: 3,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
               spacing={2}
               direction="row"
+              sx={{ mt: 4, justifyContent: "space-between" }}
             >
-              {selected2 >= 0 ? (
-                <>
-                  <ButtonGroup>
-                    <Button
-                      onClick={() => {
-                        navigate(
-                          `/collection/${listed[selected2].cId}/token/${listed[selected2].tId}`
-                        );
-                      }}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleDeleteListing(listed[selected2].lId);
-                      }}
-                    >
-                      Unlist
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSelected(-1);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  </ButtonGroup>
-                </>
-              ) : null}
-            </Stack>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              {listed.map((listing: any, index: number) => {
-                const nft = nfts.find(
-                  (el: any) =>
-                    el.contractId === Number(listing.cId) &&
-                    el.tokenId === Number(listing.tId)
-                );
-                return (
-                  <Grid item xs={6} sm={4} md={3} lg={2} key={nft.id}>
-                    <img
-                      style={{
-                        width: "100%",
-                        cursor: "pointer",
-                        borderRadius: 10,
-                        border:
-                          selected2 === index
-                            ? "5px solid rgb(139, 44, 195)"
-                            : isDarkTheme
-                            ? "5px solid rgb(22, 23, 23)"
-                            : "5px solid #fff",
-                      }}
-                      src={nft.metadata.image}
-                      alt={nft.metadata.name}
-                      onClick={() => {
-                        if (id?.indexOf(activeAccount?.address || "") !== -1) {
-                          if (selected === index) {
-                            setSelected2(-1);
-                          } else {
-                            setSelected2(index);
+              <Typography variant="h4" sx={{ mt: 3 }}>
+                Listed <small>{listedNfts.length}</small>
+              </Typography>
+              <Stack
+                sx={{
+                  mt: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+                spacing={2}
+                direction="row"
+              >
+                {selected2 !== "" ? (
+                  <>
+                    <ButtonGroup>
+                      {viewMode === "grid" ? (
+                        <Button
+                          onClick={() => {
+                            const nft = listedNfts.find(
+                              (el: any) =>
+                                `${el.listing.mpContractId}-${el.listing.mpListingId}` ===
+                                selected2
+                            );
+                            navigate(
+                              `/collection/${nft.contractId}/token/${nft.tokenId}`
+                            );
+                          }}
+                        >
+                          <VisibilityIcon />
+                        </Button>
+                      ) : null}
+                      <Button
+                        onClick={async () => {
+                          try {
+                            // get account available balance
+                            const accInfo = await algodClient
+                              .accountInformation(activeAccount?.address || "")
+                              .do();
+                            const availableBalance =
+                              accInfo.amount - accInfo["min-balance"];
+                            // check that available balance is greater than or equal to 0.1235
+                            if (availableBalance < 123500) {
+                              throw new Error(
+                                `Insufficient balance (${
+                                  (availableBalance - 123500) / 1e6
+                                } VOI). Please fund your account.`
+                              );
+                            }
+                            const nft = listedNfts.find(
+                              (el: any) =>
+                                `${el.listing.mpContractId}-${el.listing.mpListingId}` ===
+                                selected2
+                            );
+                            const royalties = decodeRoyalties(
+                              nft.metadata.royalties
+                            );
+                            console.log({ ...nft, royalties });
+                            setNft({
+                              ...nft,
+                              royalties,
+                            });
+                            setOpenListSale(true);
+                          } catch (e: any) {
+                            console.log(e);
+                            toast.error(e.message);
                           }
-                        } else {
-                          navigate(
-                            `/collection/${nft.contractId}/token/${nft.tokenId}`
+                        }}
+                      >
+                        <EditIcon />
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const nft = listedNfts.find(
+                            (el: any) =>
+                              `${el.listing.mpContractId}-${el.listing.mpListingId}` ===
+                              selected2
                           );
-                        }
-                      }}
-                    />
-                  </Grid>
-                );
-              })}
-            </Grid>
+                          handleDeleteListing(nft.listing.mpListingId);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </Button>
+                      {/*<Button
+                        onClick={() => {
+                          setSelected2("");
+                        }}
+                      >
+                        Clear
+                      </Button>*/}
+                    </ButtonGroup>
+                  </>
+                ) : null}
+              </Stack>
+              <ToggleButtonGroup
+                sx={{ display: { xs: "none", sm: "flex" } }}
+                color="primary"
+                value={viewMode}
+                exclusive
+                onChange={() => {
+                  setViewMode(viewMode === "list" ? "grid" : "list");
+                }}
+                aria-label="Platform"
+              >
+                <ToggleButton value="list">
+                  <ViewListIcon />
+                </ToggleButton>
+                <ToggleButton value="grid">
+                  <GridViewIcon />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+            {viewMode === "list" && nfts && listings && collections ? (
+              <Box sx={{ mt: 4 }}>
+                <NFTListingTable
+                  onSelect={(x: string) => {
+                    if (x === selected2) {
+                      setSelected2("");
+                    } else {
+                      setSelected2(x);
+                    }
+                  }}
+                  selected={selected2}
+                  tokens={nfts}
+                  listings={listings}
+                  collections={collections}
+                  columns={["image", "token", "price"]}
+                />
+              </Box>
+            ) : null}
+            {viewMode == "grid" ? (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                {listedNfts?.map((nft: any, index: number) => {
+                  const pk = `${nft.listing.mpContractId}-${nft.listing.mpListingId}`;
+                  return nft ? (
+                    <Grid item xs={6} sm={4} md={3} lg={2} key={nft.id}>
+                      <img
+                        style={{
+                          width: "100%",
+                          cursor: "pointer",
+                          borderRadius: 10,
+                          border:
+                            selected2 === pk
+                              ? "5px solid rgb(139, 44, 195)"
+                              : isDarkTheme
+                              ? "5px solid rgb(22, 23, 23)"
+                              : "5px solid #fff",
+                        }}
+                        src={nft.metadata.image}
+                        alt={nft.metadata.name}
+                        onClick={() => {
+                          if (
+                            id?.indexOf(activeAccount?.address || "") !== -1
+                          ) {
+                            if (selected2 === pk) {
+                              setSelected2("");
+                            } else {
+                              setSelected2(pk);
+                            }
+                          } else {
+                            navigate(
+                              `/collection/${nft.contractId}/token/${nft.tokenId}`
+                            );
+                          }
+                        }}
+                      />
+                    </Grid>
+                  ) : null;
+                })}
+              </Grid>
+            ) : null}
           </>
         ) : null}
-
-        <Typography
+        {/*<Typography
           sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
           variant="h6"
         >
@@ -948,7 +1316,7 @@ export const Account: React.FC = () => {
               NFT Navigator
             </StyledLink>
           </li>
-        </ExternalLinks>
+              </ExternalLinks>*/}
       </Container>
       <TransferModal
         title="Transfer NFT"
@@ -957,14 +1325,16 @@ export const Account: React.FC = () => {
         handleClose={() => setOpen(false)}
         onSave={handleTransfer}
       />
-      {nft ? <ListSaleModal
-        title="List NFT for Sale"
-        loading={isListing}
-        open={openListSale}
-        handleClose={() => setOpenListSale(false)}
-        onSave={handleListSale}
-        nft={nft}
-      /> : null}
+      {nft ? (
+        <ListSaleModal
+          title="List NFT for Sale"
+          loading={isListing}
+          open={openListSale}
+          handleClose={() => setOpenListSale(false)}
+          onSave={handleListSale}
+          nft={nft}
+        />
+      ) : null}
     </Layout>
-  );
+  ) : null;
 };

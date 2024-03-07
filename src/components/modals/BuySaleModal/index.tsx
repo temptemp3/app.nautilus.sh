@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useWallet } from "@txnlab/use-wallet";
 import PaymentCurrencyRadio from "../../PaymentCurrencyRadio";
+import VoiIcon from "static/crypto-icons/0.svg";
 
 interface BuySaleModalProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface BuySaleModalProps {
   buttonText?: string;
   image: string;
   price: string;
+  currency: string;
 }
 
 const BuySaleModal: React.FC<BuySaleModalProps> = ({
@@ -31,17 +33,10 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
   onSave,
   image,
   price,
+  currency,
   title = "Enter Address",
   buttonText = "Send",
 }) => {
-  /* Payment currency */
-
-  const [currency, setCurrency] = useState<string>("VIO");
-
-  const handleCurrencyChange = (newCurrency: string) => {
-    setCurrency(newCurrency);
-  };
-
   /* Modal */
 
   const handleSave = async () => {
@@ -89,7 +84,7 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
                 >
                   <InputLabel htmlFor="price">Price</InputLabel>
                   <Typography variant="h5" gutterBottom>
-                    {price}
+                    {price} {currency}
                   </Typography>
                 </Box>
               </Grid>

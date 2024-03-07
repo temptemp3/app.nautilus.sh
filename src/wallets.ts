@@ -24,40 +24,49 @@ const getDynamicLuteConnect = async () => {
   return LuteConnect;
 };
 
-export const getProviderInit: any = () => ({
-  // providers
-  //  algorand
-  //  algorand-testnet
-  //    pera
-  //    daffi
-  //    exodus
-  //    defly
-  //    kibisis
-  //  voi-testnet
-  //    defly (A-Wallet)
-  //    kibisis
-  //    lute
-  providers: [
-    { id: PROVIDER_ID.DEFLY, getDynamicClient: getDynamicDeflyWalletConnect },
-    //{ id: PROVIDER_ID.PERA, getDynamicClient: getDynamicPeraWalletConnect },
-    //{ id: PROVIDER_ID.DAFFI, getDynamicClient: getDynamicDaffiWalletConnect },
-    //{ id: PROVIDER_ID.EXODUS },
-    {
-      id: PROVIDER_ID.LUTE,
-      getDynamicClient: getDynamicLuteConnect,
-      clientOptions: { siteName: "Nautilus" },
-    },
-    { id: PROVIDER_ID.KIBISIS },
-  ],
-  nodeConfig: {
-    network: "voi-testnet",
-    nodeServer: "https://testnet-api.voi.nodly.io",
-    nodeToken: "",
-    nodePort: "443",
-  },
-  algosdkStatic: algosdk,
-  debug: true,
-});
+export const getProviderInit: any = () => {
+  do {
+    try {
+      return {
+        // providers
+        //  algorand
+        //  algorand-testnet
+        //    pera
+        //    daffi
+        //    exodus
+        //    defly
+        //    kibisis
+        //  voi-testnet
+        //    defly (A-Wallet)
+        //    kibisis
+        //    lute
+        providers: [
+          {
+            id: PROVIDER_ID.DEFLY,
+            getDynamicClient: getDynamicDeflyWalletConnect,
+          },
+          {
+            id: PROVIDER_ID.LUTE,
+            getDynamicClient: getDynamicLuteConnect,
+            clientOptions: { siteName: "Nautilus" },
+          },
+          { id: PROVIDER_ID.KIBISIS },
+        ],
+        nodeConfig: {
+          network: "voi-testnet",
+          nodeServer: "https://testnet-api.voi.nodly.io",
+          nodeToken: "",
+          nodePort: "443",
+        },
+        algosdkStatic: algosdk,
+        debug: true,
+      };
+    } catch (error) {
+      console.error(error);
+    }
+    setTimeout(() => {}, 4000);
+  } while (true);
+};
 
 export const getCurrentNode = () => {
   const [node, customNode, customIndexer] = (

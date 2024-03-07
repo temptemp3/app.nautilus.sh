@@ -1,20 +1,23 @@
 // db.ts
 import Dexie from "dexie";
 
-export const mpDb = new Dexie("mpDatabase");
+const mpDb = new Dexie("mpDatabase");
 
 mpDb.version(1).stores({
+  sales: "pk, mpContractId, mpListingId, tokenId, seller, buyer, currency, price, round, timestamp, collectionId",
+  collections: "pk, contractId, totalSupply, isBlacklisted, mintRound",
+  tokens: "pk, owner, approved, tokenId, contractId, mintRound, metadataURI, metadata",
   // ListId, CollectionId, TokenId, ListAddr, ListPrice, EndTime, Royalties
-  listings:
-    "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, endT, roy",
+  //listings:
+  //  "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, endT, roy",
   // BuyEvent: [UInt256, Address], // ListId BuyAddr
   //sales: "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, bAddr",
-  sales: "pk, mp, txId, round, timestamp, lId",
+  //sales: "pk, mp, txId, round, timestamp, lId",
   // ClaimEvent: [UInt256], // ListId
   //claims: "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, bAddr",
-  claims: "pk, mp, txId, round, timestamp, lId",
+  //claims: "pk, mp, txId, round, timestamp, lId",
   // DeleteListingEvent: [UInt256], // ListId
-  deletions: "pk, mp, txId, round, timestamp, lId",
+  //deletions: "pk, mp, txId, round, timestamp, lId",
   // AuctionEvent: [UInt256, Contract, UInt256, Address, Price, UInt], // AuctionId, CollectionId, TokenId, ListAddr, ListPrice, EndTime
   //auctions:
   //  "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, endTime",
@@ -34,3 +37,5 @@ mpDb.version(1).stores({
   //reverseListings:
   //  "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, fPrc, endTime",
 });
+
+export default mpDb;

@@ -1,6 +1,7 @@
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 const Dotenv = require("dotenv-webpack");
+const webpack = require('webpack')
 
 module.exports = {
   entry: "./src/index.tsx",
@@ -18,6 +19,9 @@ module.exports = {
       pages: path.resolve(__dirname, "src/pages"),
       static: path.resolve(__dirname, "src/static"),
     },
+    fallback: {
+      buffer: require.resolve('buffer'),
+    }
   },
   module: {
     rules: [
@@ -62,6 +66,9 @@ module.exports = {
           to: path.join(__dirname, "dist"),
         },
       ],
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
     }),
   ],
 };
