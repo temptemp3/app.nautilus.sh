@@ -30,6 +30,7 @@ import {
 } from "../../types";
 import { getSales } from "../../store/saleSlice";
 import Marquee from "react-fast-marquee";
+import CartNftCard from "../../components/CartNFTCard";
 
 const CollectionName = styled.div`
   color: var(--White, #fff);
@@ -170,7 +171,6 @@ export const Home: React.FC = () => {
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
-
   /* Collections */
   const collections = useSelector(
     (state: any) => state.collections.collections
@@ -357,10 +357,12 @@ export const Home: React.FC = () => {
               <Marquee>
                 <Stack direction="row" spacing={2} sx={{ marginLeft: "16px" }}>
                   {listedNfts.slice(0, 12).map((el: ListedToken) => {
-                    const rank = rankings.find(
-                      (r: RankingI) => r.collectionId === el.contractId
-                    );
-                    return rank ? (
+                    return (
+                      <CartNftCard
+                        key={el.listing.transactionId}
+                        listedNft={el}
+                      />
+                      /*
                       <Box
                         style={{
                           cursor: "pointer",
@@ -391,9 +393,11 @@ export const Home: React.FC = () => {
                           }}
                         >
                           <Stack gap={1}>
-                            <CollectionName>{rank.name}</CollectionName>
+                            <CollectionName>{el.metadata.name}</CollectionName>
                             <CollectionVolume>
-                              {rank.score}{" "}
+                              {Math.round(
+                                el.listing.price / 1e6
+                              ).toLocaleString()}{" "}
                               {el.listing.currency === 0 ? "VOI" : "VIA"}
                             </CollectionVolume>
                           </Stack>
@@ -404,7 +408,8 @@ export const Home: React.FC = () => {
                           />
                         </Stack>
                       </Box>
-                    ) : null;
+                      */
+                    );
                   })}
                 </Stack>
               </Marquee>
