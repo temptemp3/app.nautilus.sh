@@ -2,16 +2,15 @@ import React, { useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
 import {
   Box,
-  CircularProgress,
   Container,
   Grid,
+  Paper,
   Skeleton,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import Section from "../../components/Section";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -22,7 +21,6 @@ import { UnknownAction } from "@reduxjs/toolkit";
 import { ListingI } from "../../types";
 import { getCollections } from "../../store/collectionSlice";
 import NFTListingTable from "../../components/NFTListingTable";
-//import { MarketplaceContext } from "../../store/MarketplaceContext";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import GridViewIcon from "@mui/icons-material/GridView";
 
@@ -77,12 +75,6 @@ const BannerTitle = styled.h1`
   font-style: normal;
   font-weight: 700;
   line-height: 100%; /* 40px */
-`;
-
-const ExternalLinks = styled.ul`
-  & li {
-    margin-top: 10px;
-  }
 `;
 
 const StyledLink = styled(Link)`
@@ -141,42 +133,6 @@ export const Collection: React.FC = () => {
       console.log(e);
     }
   }, []);
-
-  /* NFT Navigator Collections */
-  // const [collections, setCollections] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     (async () => {
-  //       const {
-  //         data: { collections: res },
-  //       } = await axios.get(
-  //         "https://arc72-idx.voirewards.com/nft-indexer/v1/collections",
-  //         {
-  //           params: {
-  //             contractId: id,
-  //           },
-  //         }
-  //       );
-  //       const collections = [];
-  //       for (const c of res) {
-  //         const t = c.firstToken;
-  //         if (!!t) {
-  //           const tm = JSON.parse(t.metadata);
-  //           collections.push({
-  //             ...c,
-  //             firstToken: {
-  //               ...t,
-  //               metadata: tm,
-  //             },
-  //           });
-  //         }
-  //       }
-  //       setCollections(collections);
-  //     })();
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, [listings]);
 
   /* NFT Navigator NFTs */
   const [nfts, setNfts] = React.useState<any>(null);
@@ -279,8 +235,6 @@ export const Collection: React.FC = () => {
       sales?.filter((sale: any) => `${sale.collectionId}` === `${id}`) || []
     );
   }, [sales]);
-
-  console.log({ collectionSales });
 
   const floor = useMemo(() => {
     return listedNfts.length > 0
@@ -483,54 +437,6 @@ export const Collection: React.FC = () => {
                     </Box>
                   )
                 ) : null}
-                {/*<div>
-                  <Typography
-                    sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
-                    variant="h6"
-                  >
-                    External Links
-                  </Typography>
-                  <ExternalLinks
-                    style={{
-                      listStyle: "none",
-                    }}
-                  >
-                    <li>
-                      <StyledLink
-                        target="_blank"
-                        to={`https://nftnavigator.xyz/collection/${id}/`}
-                        style={{ color: isDarkTheme ? "#fff" : "#000" }}
-                      >
-                        <img
-                          src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
-                          style={{
-                            height: "24px",
-                            width: "24px",
-                            borderRadius: "5px",
-                          }}
-                        />{" "}
-                        NFT Navigator
-                      </StyledLink>
-                    </li>
-                    <li>
-                      <StyledLink
-                        target="_blank"
-                        to={`https://highforge.io/project/${id}`}
-                        style={{ color: isDarkTheme ? "#fff" : "#000" }}
-                      >
-                        <img
-                          src="https://highforge.io/apple-touch-icon.png"
-                          style={{
-                            height: "24px",
-                            width: "24px",
-                            borderRadius: "5px",
-                          }}
-                        />{" "}
-                        High Forge
-                      </StyledLink>
-                    </li>
-                  </ExternalLinks>
-                        </div>*/}
               </Stack>
             </Grid>
           </Grid>
