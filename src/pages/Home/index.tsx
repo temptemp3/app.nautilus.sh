@@ -354,7 +354,7 @@ export const Home: React.FC = () => {
                 overflowX: "hidden",
               }}
             >
-              <Marquee>
+              <Marquee direction="left">
                 <Stack direction="row" spacing={2} sx={{ marginLeft: "16px" }}>
                   {listedNfts.slice(0, 12).map((el: ListedToken) => {
                     return (
@@ -362,53 +362,6 @@ export const Home: React.FC = () => {
                         key={el.listing.transactionId}
                         listedNft={el}
                       />
-                      /*
-                      <Box
-                        style={{
-                          cursor: "pointer",
-                          width: "384px",
-                          height: "384px",
-                          flexShrink: 0,
-                          borderRadius: "20px",
-                          background: `linear-gradient(0deg, rgba(0, 0, 0, 0.50) 10.68%, rgba(0, 0, 0, 0.00) 46.61%), url(${el.metadata.image}), lightgray 50% / cover no-repeat`,
-                          backgroundSize: "cover",
-                          display: "flex",
-                          alignItems: "flex-end",
-                          justifyContent: "center",
-                        }}
-                        onClick={() => {
-                          navigate(`/collection/${el.contractId}`);
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={2}
-                          sx={{
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            color: "#fff",
-                            width: "326px",
-                            height: "52px",
-                            marginBottom: "27px",
-                          }}
-                        >
-                          <Stack gap={1}>
-                            <CollectionName>{el.metadata.name}</CollectionName>
-                            <CollectionVolume>
-                              {Math.round(
-                                el.listing.price / 1e6
-                              ).toLocaleString()}{" "}
-                              {el.listing.currency === 0 ? "VOI" : "VIA"}
-                            </CollectionVolume>
-                          </Stack>
-                          <img
-                            height="40"
-                            width="40"
-                            src="/static/icon-cart.png"
-                          />
-                        </Stack>
-                      </Box>
-                      */
                     );
                   })}
                 </Stack>
@@ -417,6 +370,108 @@ export const Home: React.FC = () => {
           ) : (
             "No NFTs available for sale."
           )}
+          {/*<Box sx={{ mt: 2 }}>
+            {listedNfts ? (
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                }}
+              >
+                <Marquee direction="right">
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ marginLeft: "16px" }}
+                  >
+                    {listedNfts
+                      .filter(
+                        (el: ListedToken) =>
+                          el.listing.price / 1e6 >= 50_000 &&
+                          el.listing.price / 1e6 <= 100_000
+                      )
+                      .slice(0, 12)
+                      .map((el: ListedToken) => {
+                        return (
+                          <CartNftCard
+                            key={el.listing.transactionId}
+                            listedNft={el}
+                          />
+                        );
+                      })}
+                  </Stack>
+                </Marquee>
+              </div>
+            ) : null}
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            {listedNfts ? (
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                }}
+              >
+                <Marquee direction="left">
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ marginLeft: "16px" }}
+                  >
+                    {listedNfts
+                      .filter(
+                        (el: ListedToken) =>
+                          el.listing.price / 1e6 >= 100_000 &&
+                          el.listing.price / 1e6 <= 500_000
+                      )
+                      .slice(0, 12)
+                      .map((el: ListedToken) => {
+                        return (
+                          <CartNftCard
+                            key={el.listing.transactionId}
+                            listedNft={el}
+                          />
+                        );
+                      })}
+                  </Stack>
+                </Marquee>
+              </div>
+            ) : null}
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            {listedNfts ? (
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                }}
+              >
+                <Marquee direction="right">
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ marginLeft: "16px" }}
+                  >
+                    {listedNfts
+                      .filter(
+                        (el: ListedToken) => el.listing.price / 1e6 >= 500_000
+                      )
+                      .slice(0, 12)
+                      .map((el: ListedToken) => {
+                        return (
+                          <CartNftCard
+                            key={el.listing.transactionId}
+                            listedNft={el}
+                          />
+                        );
+                      })}
+                  </Stack>
+                </Marquee>
+              </div>
+            ) : null}
+          </Box>
+                    */}
+
           {/* Top Collections */}
           <SectionHeading>
             <SectionTitle className={isDarkTheme ? "dark" : "light"}>
