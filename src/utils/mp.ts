@@ -175,7 +175,7 @@ export const getRankings = (
     } else {
       floors.set(
         listing.collectionId,
-        listing.currency === 0 ? listing.price : listing.pricer * exchangeRate
+        listing.currency === 0 ? listing.price : listing.price * exchangeRate
       );
     }
   }
