@@ -880,13 +880,18 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                         } `}
                     {!nft.listing ||
                     nft.approved ===
-                      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ" ? (
-                      "Not Available"
-                    ) : (
-                      <span>
-                        {`(~${Math.round(
-                          (nft.listing.price * exchangeRate) / 1e6
-                        ).toLocaleString()} VOI)`}
+                      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ" ? null : (
+                      <span style={{
+                        fontSize: "16px",
+                        color: "#68727d"
+                      }}>
+                        {`${nft.listing.currency}` === "0"
+                          ? `(~${Math.round(
+                              nft.listing.price / exchangeRate / 1e6
+                            ).toLocaleString()} VIA)`
+                          : `(~${Math.round(
+                              (nft.listing.price * exchangeRate) / 1e6
+                            ).toLocaleString()} VOI)`}
                       </span>
                     )}
                   </div>
