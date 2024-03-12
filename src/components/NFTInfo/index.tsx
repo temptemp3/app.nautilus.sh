@@ -1079,7 +1079,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           const customTxn = (
             await Promise.all([
               builder.arc200.arc200_approve(
-                algosdk.getApplicationAddress(ctcInfoMp206),
+                algosdk.getApplicationAddress(nft.listing.mpContractId),
                 nft.listing.price
               ),
               builder.mp.a_sale_buySC(nft.listing.mpListingId),
