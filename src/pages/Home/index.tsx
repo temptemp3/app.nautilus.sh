@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../../layouts/Default";
 import Section from "../../components/Section";
-import { Grid, Skeleton } from "@mui/material";
+import { Box, Grid, Skeleton } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -29,6 +29,31 @@ import {
   TokenI,
 } from "../../types";
 import { getSales } from "../../store/saleSlice";
+import Marquee from "react-fast-marquee";
+import CartNftCard from "../../components/CartNFTCard";
+import { getPrices } from "../../store/dexSlice";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+
+const CollectionName = styled.div`
+  color: var(--White, #fff);
+  leading-trim: both;
+  text-edge: cap;
+  font-feature-settings: "clig" off, "liga" off;
+  font-family: Inter;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 24px; /* 120% */
+`;
+
+const CollectionVolume = styled.div`
+  color: var(--White, #fff);
+  font-family: Inter;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 140%; /* 22.4px */
+`;
 
 const SectionHeading = styled.div`
   display: flex;
@@ -142,13 +167,24 @@ function shuffleArray<T>(array: T[]): T[] {
 export const Home: React.FC = () => {
   /* Dispatch */
   const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
-
   /* Collections */
   const collections = useSelector(
     (state: any) => state.collections.collections
@@ -229,7 +265,17 @@ export const Home: React.FC = () => {
     listedNfts.sort(
       (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
     );
-    return listedNfts;
+    // remove duplicates listings by collection
+    const seen: any = {};
+    const filteredListedNfts = listedNfts.filter((nft: any) => {
+      const key = `${nft.contractId}`;
+      if (seen[key]) {
+        return false;
+      }
+      seen[key] = true;
+      return true;
+    });
+    return filteredListedNfts;
   }, [tokenStatus, tokens, listings]);
 
   const listedCollections = useMemo(() => {
@@ -261,31 +307,37 @@ export const Home: React.FC = () => {
     if (
       !sales ||
       !listings ||
+      !exchangeRate ||
       salesStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
-      tokenStatus !== "succeeded"
+      tokenStatus !== "succeeded" ||
+      dexStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings);
-  }, [sales, tokens, collections, listings]);
+    return getRankings(tokens, collections, sales, listings, exchangeRate);
+  }, [sales, tokens, collections, listings, exchangeRate]);
 
   const isLoading = useMemo(
     () =>
+      !exchangeRate ||
       !listings ||
       !listedNfts ||
       !listedCollections ||
       !rankings ||
       tokenStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
-      salesStatus !== "succeeded",
+      salesStatus !== "succeeded" ||
+      dexStatus !== "succeeded",
     [
       listings,
       listedNfts,
       listedCollections,
       rankings,
+      exchangeRate,
       tokenStatus,
       collectionStatus,
       salesStatus,
+      dexStatus,
     ]
   );
 
@@ -316,122 +368,130 @@ export const Home: React.FC = () => {
             </Stack>
           </SectionHeading>
           {listedNfts ? (
-            <>
-              <Grid
-                container
-                spacing={2}
-                sx={{ display: { xs: "none", lg: "flex" } }}
-              >
-                {listedNfts.slice(0, 6).map((el: ListedToken) => {
-                  return (
-                    <Grid
-                      item
-                      xs={6}
-                      sm={4}
-                      md={3}
-                      lg={2}
-                      key={el.listing.transactionId}
-                    >
-                      <NftCard
-                        nftName={el.metadata.name}
-                        image={el.metadata.image}
-                        owner={el.owner}
-                        price={`${(el.listing.price / 1e6).toLocaleString()}`}
-                        currency={
-                          `${el.listing.currency}` === "0" ? "VOI" : "VIA"
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/collection/${el.contractId}/token/${el.tokenId}`
-                          )
-                        }
+            <div
+              style={{
+                width: "100%",
+                overflowX: "hidden",
+              }}
+            >
+              <Marquee direction="left">
+                <Stack direction="row" spacing={2} sx={{ marginLeft: "16px" }}>
+                  {listedNfts.slice(0, 12).map((el: ListedToken) => {
+                    return (
+                      <CartNftCard
+                        key={el.listing.transactionId}
+                        listedNft={el}
                       />
-                    </Grid>
-                  );
-                })}
-              </Grid>
-              <Grid
-                container
-                spacing={2}
-                sx={{ display: { xs: "none", md: "flex", lg: "none" } }}
-              >
-                {listedNfts.slice(0, 4).map((el: any) => {
-                  return (
-                    <Grid item xs={6} sm={4} md={3} lg={2}>
-                      <NftCard
-                        nftName={el.metadata.name}
-                        image={el.metadata.image}
-                        owner={el.owner}
-                        price={`${(el.listing.price / 1e6).toLocaleString()}`}
-                        currency={
-                          `${el.listing.currency}` === "0" ? "VOI" : "VIA"
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/collection/${el.contractId}/token/${el.tokenId}`
-                          )
-                        }
-                      />
-                    </Grid>
-                  );
-                })}
-              </Grid>
-              <Grid
-                container
-                spacing={2}
-                sx={{ display: { xs: "none", sm: "flex", md: "none" } }}
-              >
-                {listedNfts.slice(0, 3).map((el: any) => {
-                  return (
-                    <Grid item xs={6} sm={4} md={3} lg={2}>
-                      <NftCard
-                        nftName={el.metadata.name}
-                        image={el.metadata.image}
-                        owner={el.owner}
-                        price={`${(el.listing.price / 1e6).toLocaleString()}`}
-                        currency={
-                          `${el.listing.currency}` === "0" ? "VOI" : "VIA"
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/collection/${el.contractId}/token/${el.tokenId}`
-                          )
-                        }
-                      />
-                    </Grid>
-                  );
-                })}
-              </Grid>
-              <Grid
-                container
-                spacing={2}
-                sx={{ display: { xs: "flex", sm: "none" } }}
-              >
-                {listedNfts.slice(0, 2).map((el: any) => {
-                  return (
-                    <Grid item xs={6} sm={4} md={3} lg={2}>
-                      <NftCard
-                        nftName={el.metadata.name}
-                        image={el.metadata.image}
-                        owner={el.owner}
-                        price={`${(el.listing.price / 1e6).toLocaleString()}`}
-                        currency={
-                          `${el.listing.currency}` === "0" ? "VOI" : "VIA"
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/collection/${el.contractId}/token/${el.tokenId}`
-                          )
-                        }
-                      />
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            </>
+                    );
+                  })}
+                </Stack>
+              </Marquee>
+            </div>
           ) : (
             "No NFTs available for sale."
           )}
+          {/*<Box sx={{ mt: 2 }}>
+            {listedNfts ? (
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                }}
+              >
+                <Marquee direction="right">
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ marginLeft: "16px" }}
+                  >
+                    {listedNfts
+                      .filter(
+                        (el: ListedToken) =>
+                          el.listing.price / 1e6 >= 50_000 &&
+                          el.listing.price / 1e6 <= 100_000
+                      )
+                      .slice(0, 12)
+                      .map((el: ListedToken) => {
+                        return (
+                          <CartNftCard
+                            key={el.listing.transactionId}
+                            listedNft={el}
+                          />
+                        );
+                      })}
+                  </Stack>
+                </Marquee>
+              </div>
+            ) : null}
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            {listedNfts ? (
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                }}
+              >
+                <Marquee direction="left">
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ marginLeft: "16px" }}
+                  >
+                    {listedNfts
+                      .filter(
+                        (el: ListedToken) =>
+                          el.listing.price / 1e6 >= 100_000 &&
+                          el.listing.price / 1e6 <= 500_000
+                      )
+                      .slice(0, 12)
+                      .map((el: ListedToken) => {
+                        return (
+                          <CartNftCard
+                            key={el.listing.transactionId}
+                            listedNft={el}
+                          />
+                        );
+                      })}
+                  </Stack>
+                </Marquee>
+              </div>
+            ) : null}
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            {listedNfts ? (
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                }}
+              >
+                <Marquee direction="right">
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ marginLeft: "16px" }}
+                  >
+                    {listedNfts
+                      .filter(
+                        (el: ListedToken) => el.listing.price / 1e6 >= 500_000
+                      )
+                      .slice(0, 12)
+                      .map((el: ListedToken) => {
+                        return (
+                          <CartNftCard
+                            key={el.listing.transactionId}
+                            listedNft={el}
+                          />
+                        );
+                      })}
+                  </Stack>
+                </Marquee>
+              </div>
+            ) : null}
+          </Box>
+                    */}
+
           {/* Top Collections */}
           <SectionHeading>
             <SectionTitle className={isDarkTheme ? "dark" : "light"}>

@@ -2,16 +2,15 @@ import React, { useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
 import {
   Box,
-  CircularProgress,
   Container,
   Grid,
+  Paper,
   Skeleton,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import Section from "../../components/Section";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -22,9 +21,10 @@ import { UnknownAction } from "@reduxjs/toolkit";
 import { ListingI } from "../../types";
 import { getCollections } from "../../store/collectionSlice";
 import NFTListingTable from "../../components/NFTListingTable";
-//import { MarketplaceContext } from "../../store/MarketplaceContext";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import GridViewIcon from "@mui/icons-material/GridView";
+import { getPrices } from "../../store/dexSlice";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 
 const StatContainer = styled(Stack)`
   display: flex;
@@ -79,12 +79,6 @@ const BannerTitle = styled.h1`
   line-height: 100%; /* 40px */
 `;
 
-const ExternalLinks = styled.ul`
-  & li {
-    margin-top: 10px;
-  }
-`;
-
 const StyledLink = styled(Link)`
   text-decoration: none;
   color: inherit;
@@ -97,6 +91,18 @@ const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 export const Collection: React.FC = () => {
   const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Sales */
   const sales = useSelector((state: any) => state.sales.sales);
   const salesStatus = useSelector((state: any) => state.sales.status);
@@ -142,41 +148,16 @@ export const Collection: React.FC = () => {
     }
   }, []);
 
-  /* NFT Navigator Collections */
-  // const [collections, setCollections] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     (async () => {
-  //       const {
-  //         data: { collections: res },
-  //       } = await axios.get(
-  //         "https://arc72-idx.voirewards.com/nft-indexer/v1/collections",
-  //         {
-  //           params: {
-  //             contractId: id,
-  //           },
-  //         }
-  //       );
-  //       const collections = [];
-  //       for (const c of res) {
-  //         const t = c.firstToken;
-  //         if (!!t) {
-  //           const tm = JSON.parse(t.metadata);
-  //           collections.push({
-  //             ...c,
-  //             firstToken: {
-  //               ...t,
-  //               metadata: tm,
-  //             },
-  //           });
-  //         }
-  //       }
-  //       setCollections(collections);
-  //     })();
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, [listings]);
+  const normalListings = useMemo(() => {
+    if (!listings || !exchangeRate) return [];
+    return listings.map((listing: ListingI) => {
+      return {
+        ...listing,
+        normalPrice:
+          listing.currency === 0 ? listing.price : listing.price * exchangeRate,
+      };
+    });
+  }, [listings, exchangeRate]);
 
   /* NFT Navigator NFTs */
   const [nfts, setNfts] = React.useState<any>(null);
@@ -280,18 +261,24 @@ export const Collection: React.FC = () => {
     );
   }, [sales]);
 
-  console.log({ collectionSales });
-
   const floor = useMemo(() => {
+    if (!listedNfts || !exchangeRate) return { listing: { price: 0 } };
     return listedNfts.length > 0
       ? listedNfts.reduce(
           (acc: any, nft: any) => {
-            return acc.listing.price > nft.listing.price ? nft : acc;
+            return (acc.listing.currency === 0
+              ? acc.listing.price
+              : acc.listing.price * exchangeRate) >
+              (nft.listing.currency === 0
+                ? nft.listing.price
+                : nft.listing.price * exchangeRate)
+              ? nft
+              : acc;
           },
           { listing: { price: Number.MAX_SAFE_INTEGER } }
         )
       : { listing: { price: 0 } };
-  }, [listedNfts]);
+  }, [listedNfts, exchangeRate]);
 
   const ceiling = useMemo(() => {
     return listedNfts.reduce(
@@ -305,7 +292,9 @@ export const Collection: React.FC = () => {
   const volume = useMemo(() => {
     return (
       collectionSales?.reduce((acc: any, sale: ListingI) => {
-        return acc + sale.price;
+        return (
+          acc + (sale.currency === 0 ? sale.price : sale.price * exchangeRate)
+        );
       }, 0) || 0
     );
   }, [collectionSales]);
@@ -385,8 +374,11 @@ export const Collection: React.FC = () => {
 
                     {
                       name: "Floor Price",
-                      displayValue:
-                        formatter.format(floor.listing.price / 1e6) + " VOI",
+                      displayValue: `${formatter.format(
+                        floor.listing.currency === 0
+                          ? floor.listing.price / 1e6
+                          : (floor.listing.price * exchangeRate) / 1e6
+                      )} VOI`,
                       value: floor.listing.price,
                     },
                     {
@@ -402,8 +394,11 @@ export const Collection: React.FC = () => {
                     },
                     {
                       name: "Ceiling Price",
-                      displayValue:
-                        formatter.format(ceiling.listing.price / 1e6) + " VOI",
+                      displayValue: `${formatter.format(
+                        ceiling.listing.currency === 0
+                          ? ceiling.listing.price / 1e6
+                          : (ceiling.listing.price * exchangeRate) / 1e6
+                      )} VOI`,
                       value: ceiling.listing.price,
                     },
                   ].map((el, i) =>
@@ -446,7 +441,7 @@ export const Collection: React.FC = () => {
                 </Stack>
                 {viewMode === "list" ? (
                   <NFTListingTable
-                    listings={listings}
+                    listings={normalListings}
                     tokens={nfts}
                     collections={collections}
                   />
@@ -483,54 +478,6 @@ export const Collection: React.FC = () => {
                     </Box>
                   )
                 ) : null}
-                {/*<div>
-                  <Typography
-                    sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
-                    variant="h6"
-                  >
-                    External Links
-                  </Typography>
-                  <ExternalLinks
-                    style={{
-                      listStyle: "none",
-                    }}
-                  >
-                    <li>
-                      <StyledLink
-                        target="_blank"
-                        to={`https://nftnavigator.xyz/collection/${id}/`}
-                        style={{ color: isDarkTheme ? "#fff" : "#000" }}
-                      >
-                        <img
-                          src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
-                          style={{
-                            height: "24px",
-                            width: "24px",
-                            borderRadius: "5px",
-                          }}
-                        />{" "}
-                        NFT Navigator
-                      </StyledLink>
-                    </li>
-                    <li>
-                      <StyledLink
-                        target="_blank"
-                        to={`https://highforge.io/project/${id}`}
-                        style={{ color: isDarkTheme ? "#fff" : "#000" }}
-                      >
-                        <img
-                          src="https://highforge.io/apple-touch-icon.png"
-                          style={{
-                            height: "24px",
-                            width: "24px",
-                            borderRadius: "5px",
-                          }}
-                        />{" "}
-                        High Forge
-                      </StyledLink>
-                    </li>
-                  </ExternalLinks>
-                        </div>*/}
               </Stack>
             </Grid>
           </Grid>

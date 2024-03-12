@@ -13,7 +13,7 @@ import { Box, Grid } from "@mui/material";
 import Stack from "@mui/material/Stack";
 import styled from "styled-components";
 import { collections } from "../../contants/games";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export interface Player {
   collectionId: number;
@@ -140,6 +140,7 @@ const filterGames = (ranking: Player) =>
     .some((id) => id === ranking.collectionId);
 
 const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
+  const navigate = useNavigate();
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -167,6 +168,13 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                 item
                 xs={12}
                 key={filteredRankings[index].collectionId}
+                sx={{ cursor: "pointer" }}
+                onClick={() => {
+                  navigate(
+                    `/collection/${filteredRankings[index]?.collectionId}`
+                  );
+                  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                }}
               >
                 <Stack
                   direction="row"
@@ -249,6 +257,13 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                 item
                 xs={12}
                 key={filteredRankings[index].collectionId}
+                sx={{ cursor: "pointer" }}
+                onClick={() => {
+                  navigate(
+                    `/collection/${filteredRankings[index]?.collectionId}`
+                  );
+                  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                }}
               >
                 <Stack
                   direction="row"

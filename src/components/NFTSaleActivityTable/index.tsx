@@ -146,7 +146,9 @@ const NFTCollectionTable: React.FC<Props> = ({
                     to={`/collection/${collection.contractId}/token/${token.tokenId}`}
                   >
                     <StyledImage
-                      sx={{ backgroundImage: `url(${token.metadata.image})` }}
+                      sx={{
+                        backgroundImage: `url(${token?.metadata?.image || ""})`,
+                      }}
                     />
                   </Link>
                 </StyledTableCell>
@@ -154,7 +156,7 @@ const NFTCollectionTable: React.FC<Props> = ({
                   <Link
                     to={`/collection/${collection.contractId}/token/${token.tokenId}`}
                   >
-                    {token.metadata.name}
+                    {token?.metadata?.name || ""}
                   </Link>
                 </StyledTableCell>
                 <StyledTableCell>
