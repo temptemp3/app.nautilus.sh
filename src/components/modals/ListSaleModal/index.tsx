@@ -120,7 +120,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     label="Proceeds"
                     variant="outlined"
                     value={(
-                      ((100 - ((nft?.royalties?.royaltyPercent || 100) + 5)) *
+                      ((100 - ((nft?.royalties?.royaltyPercent || 0) + 2.5)) *
                         Number(price)) /
                       100
                     ).toLocaleString()}

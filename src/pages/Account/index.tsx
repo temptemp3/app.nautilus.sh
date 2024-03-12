@@ -224,6 +224,7 @@ export const Account: React.FC = () => {
             royalties,
           });
         }
+        nfts.sort((a, b) => (a.contractId === 29105406 ? -1 : 1));
         setNfts(nfts);
       })();
     } catch (e) {

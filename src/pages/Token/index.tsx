@@ -46,6 +46,7 @@ import { NFTMore } from "../../components/NFTMore";
 import { getPrices } from "../../store/dexSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import { decodeRoyalties } from "../../utils/hf";
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -406,9 +407,11 @@ export const Token: React.FC = () => {
       )
       .sort((a: any, b: any) => b.createTimestamp - a.createTimestamp)
       .pop();
+    const royalties = decodeRoyalties(nft.metadata.royalties);
     setNft({
       ...nft,
       listing,
+      royalties,
     });
   }, [id, tid, collection, listings]);
 
